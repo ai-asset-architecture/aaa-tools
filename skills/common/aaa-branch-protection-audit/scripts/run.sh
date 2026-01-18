@@ -3,6 +3,7 @@ set -euo pipefail
 
 ORG=${ORG:-}
 PLAN_PATH=${PLAN_PATH:-}
+AAA_BIN=${AAA_BIN:-aaa}
 
 if [ -z "$ORG" ]; then
   echo "ORG is required" >&2
@@ -14,4 +15,4 @@ if [ -z "$PLAN_PATH" ]; then
   exit 10
 fi
 
-aaa init protect --org "$ORG" --from-plan "$PLAN_PATH" --dry-run --jsonl
+$AAA_BIN init protect --org "$ORG" --from-plan "$PLAN_PATH" --dry-run --jsonl
