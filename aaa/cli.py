@@ -1,8 +1,34 @@
+import shutil
+from pathlib import Path
+
 import typer
 
 app = typer.Typer(no_args_is_help=True)
 sync_app = typer.Typer(no_args_is_help=True)
 workflows_app = typer.Typer(no_args_is_help=True)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _copy_tree(src: Path, dest: Path):
+    if not src.exists():
+        return
+    if src.is_dir():
+        shutil.copytree(src, dest, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".DS_Store"))
+    else:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+
+
+def _sync_sources(sources, dest_root: Path):
+    dest_root.mkdir(parents=True, exist_ok=True)
+    for source in sources:
+        if not source.exists():
+            continue
+        for item in source.iterdir():
+            if item.name.startswith("."):
+                continue
+            _copy_tree(item, dest_root / item.name)
 
 
 def _version_callback(value: bool):
@@ -25,14 +51,25 @@ def version():
 
 @sync_app.command("skills")
 def sync_skills(target: str = typer.Option("codex", help="codex|agent")):
-    """Sync skills to the specified target (stub)."""
-    typer.echo(f"sync skills stub -> target={target}")
+    """Sync skills to the specified target."""
+    if target not in {"codex", "agent"}:
+        raise typer.BadParameter("target must be codex or agent")
+    skills_root = REPO_ROOT / "skills"
+    sources = [skills_root / "common", skills_root / target]
+    dest_root = Path.cwd() / (".codex/skills" if target == "codex" else ".agent/skills")
+    _sync_sources(sources, dest_root)
+    typer.echo(f"sync skills -> {dest_root}")
 
 
 @sync_app.command("workflows")
 def sync_workflows(target: str = typer.Option("agent", help="agent")):
-    """Sync workflows to the specified target (stub)."""
-    typer.echo(f"sync workflows stub -> target={target}")
+    """Sync workflows to the specified target."""
+    if target != "agent":
+        raise typer.BadParameter("target must be agent")
+    workflows_root = REPO_ROOT / "workflows" / "agent"
+    dest_root = Path.cwd() / ".agent/workflows"
+    _sync_sources([workflows_root], dest_root)
+    typer.echo(f"sync workflows -> {dest_root}")
 
 
 @app.command()
