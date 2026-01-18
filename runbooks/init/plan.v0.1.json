@@ -1,0 +1,140 @@
+{
+  "plan_version": "0.1",
+  "aaa": {
+    "org": "ai-asset-architecture",
+    "version_tag": "v0.1.0",
+    "templates": {
+      "docs": "aaa-tpl-docs",
+      "service": "aaa-tpl-service",
+      "frontend": "aaa-tpl-frontend"
+    },
+    "actions_repo": "aaa-actions"
+  },
+  "target": {
+    "org": "{{TARGET_ORG}}",
+    "project_slug": "{{PROJECT_SLUG}}",
+    "visibility": "private",
+    "default_branch": "main",
+    "mode": "pr"
+  },
+  "repos": [
+    {
+      "name": "{{TARGET_ORG}}-docs",
+      "type": "docs",
+      "template": "aaa-tpl-docs",
+      "description": "Single source of truth for project documentation",
+      "owners": ["@aaa/architect", "@aaa/pm"],
+      "required_checks": ["lint", "test", "eval"]
+    },
+    {
+      "name": "{{TARGET_ORG}}-svc-core",
+      "type": "service",
+      "template": "aaa-tpl-service",
+      "description": "Core backend service skeleton",
+      "owners": ["@aaa/architect", "@aaa/platform"],
+      "required_checks": ["lint", "test", "eval"]
+    },
+    {
+      "name": "{{TARGET_ORG}}-fe-web",
+      "type": "frontend",
+      "template": "aaa-tpl-frontend",
+      "description": "Web frontend skeleton",
+      "owners": ["@aaa/architect", "@aaa/platform"],
+      "required_checks": ["lint", "test", "eval"]
+    }
+  ],
+  "steps": [
+    {
+      "id": "preflight",
+      "type": "check",
+      "description": "Verify local environment and GitHub auth",
+      "commands": [
+        "gh auth status",
+        "aaa --version",
+        "python3 --version"
+      ],
+      "retry": { "max_attempts": 1 }
+    },
+    {
+      "id": "ensure_repos",
+      "type": "github",
+      "description": "Create repos if missing; no-op if already exists",
+      "commands": [
+        "aaa init ensure-repos --org {{TARGET_ORG}} --from-plan plan.v0.1.json"
+      ],
+      "idempotent": true
+    },
+    {
+      "id": "apply_templates",
+      "type": "git",
+      "description": "Apply templates into target repos and commit changes on feature branches",
+      "commands": [
+        "aaa init apply-templates --org {{TARGET_ORG}} --from-plan plan.v0.1.json --aaa-tag {{AAA_VERSION}}"
+      ],
+      "idempotent": true
+    },
+    {
+      "id": "sync_assets",
+      "type": "sync",
+      "description": "Sync workflows and skills from AAA SSOT",
+      "commands": [
+        "aaa sync workflows --org {{TARGET_ORG}} --aaa-tag {{AAA_VERSION}}",
+        "aaa sync skills --org {{TARGET_ORG}} --aaa-tag {{AAA_VERSION}}"
+      ],
+      "idempotent": true
+    },
+    {
+      "id": "branch_protection",
+      "type": "github",
+      "description": "Apply branch protection baseline and required checks",
+      "commands": [
+        "aaa init protect --org {{TARGET_ORG}} --from-plan plan.v0.1.json"
+      ],
+      "idempotent": true
+    },
+    {
+      "id": "open_prs",
+      "type": "github",
+      "description": "Open PRs for changes (preferred); one PR per repo",
+      "when": { "mode_equals": "pr" },
+      "commands": [
+        "aaa init open-prs --org {{TARGET_ORG}} --from-plan plan.v0.1.json"
+      ],
+      "outputs": { "collect": ["pr_urls"] }
+    },
+    {
+      "id": "ci_verify",
+      "type": "verify",
+      "description": "Verify required checks are present and passing",
+      "commands": [
+        "aaa init verify-ci --org {{TARGET_ORG}} --from-plan plan.v0.1.json"
+      ],
+      "retry": { "max_attempts": 2, "backoff_seconds": 30 },
+      "expected": {
+        "required_checks": ["lint", "test", "eval"],
+        "status": "pass"
+      }
+    },
+    {
+      "id": "repo_evals",
+      "type": "verify",
+      "description": "Run governance-related evals (repo checks) using aaa-evals runner",
+      "commands": [
+        "aaa init repo-checks --org {{TARGET_ORG}} --from-plan plan.v0.1.json --suite governance"
+      ],
+      "expected": { "status": "pass" }
+    }
+  ],
+  "reporting": {
+    "output_schema_path": "output.schema.json",
+    "required_fields": [
+      "metadata",
+      "inputs",
+      "repos",
+      "steps",
+      "ci",
+      "branch_protection",
+      "summary"
+    ]
+  }
+}

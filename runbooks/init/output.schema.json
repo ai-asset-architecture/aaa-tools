@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AAA Init Final Report Schema",
+  "type": "object",
+  "required": ["metadata", "inputs", "repos", "steps", "branch_protection", "ci", "summary"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["report_version", "generated_at", "aaa_org", "aaa_version_tag", "target_org", "project_slug"],
+      "properties": {
+        "report_version": { "type": "string", "enum": ["0.1"] },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "aaa_org": { "type": "string" },
+        "aaa_version_tag": { "type": "string" },
+        "target_org": { "type": "string" },
+        "project_slug": { "type": "string" },
+        "mode": { "type": "string", "enum": ["pr", "direct"] },
+        "visibility": { "type": "string", "enum": ["private", "public"] },
+        "default_branch": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["plan_path", "plan_version", "tools"],
+      "properties": {
+        "plan_path": { "type": "string" },
+        "plan_version": { "type": "string" },
+        "tools": {
+          "type": "object",
+          "required": ["gh", "git", "python", "aaa"],
+          "properties": {
+            "gh": { "type": "string" },
+            "git": { "type": "string" },
+            "python": { "type": "string" },
+            "aaa": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "network_access": {
+          "type": "object",
+          "required": ["enabled", "allowed_endpoints"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "allowed_endpoints": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "external_downloads": { "type": "boolean" },
+            "external_download_sources": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "repos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "status", "url", "template_applied", "workflows_synced", "skills_synced"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["docs", "service", "frontend", "other"] },
+          "status": { "type": "string", "enum": ["created", "exists", "updated", "failed"] },
+          "url": { "type": "string" },
+          "default_branch": { "type": "string" },
+          "template_applied": { "type": "boolean" },
+          "template_source": { "type": "string" },
+          "workflows_synced": { "type": "boolean" },
+          "skills_synced": { "type": "boolean" },
+          "pr_url": { "type": "string" },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "started_at", "ended_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["pass", "fail", "skipped"] },
+          "started_at": { "type": "string", "format": "date-time" },
+          "ended_at": { "type": "string", "format": "date-time" },
+          "commands": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "stdout_path": { "type": "string" },
+          "stderr_path": { "type": "string" },
+          "error_message": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "branch_protection": {
+      "type": "object",
+      "required": ["baseline_applied", "required_checks", "settings"],
+      "properties": {
+        "baseline_applied": { "type": "boolean" },
+        "required_checks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "settings": {
+          "type": "object",
+          "required": [
+            "require_pr_reviews",
+            "required_approvals",
+            "require_status_checks",
+            "dismiss_stale_approvals",
+            "prevent_force_push",
+            "require_linear_history"
+          ],
+          "properties": {
+            "require_pr_reviews": { "type": "boolean" },
+            "required_approvals": { "type": "integer", "minimum": 0 },
+            "require_status_checks": { "type": "boolean" },
+            "dismiss_stale_approvals": { "type": "boolean" },
+            "prevent_force_push": { "type": "boolean" },
+            "require_linear_history": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "per_repo": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["repo", "applied", "notes"],
+            "properties": {
+              "repo": { "type": "string" },
+              "applied": { "type": "boolean" },
+              "missing_permissions": { "type": "boolean" },
+              "notes": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ci": {
+      "type": "object",
+      "required": ["required_checks", "per_repo"],
+      "properties": {
+        "required_checks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "per_repo": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["repo", "checks"],
+            "properties": {
+              "repo": { "type": "string" },
+              "checks": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["name", "status"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "status": { "type": "string", "enum": ["pass", "fail", "missing", "skipped"] },
+                    "details_url": { "type": "string" }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "overall": { "type": "string", "enum": ["pass", "fail", "partial"] }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "summary", "resolution"],
+        "properties": {
+          "code": { "type": "string", "enum": ["E1_PRECHECK_FAILED", "E2_AAA_INIT_FAILED", "E3_CI_GATES_FAILED", "E_OTHER"] },
+          "summary": { "type": "string" },
+          "resolution": { "type": "string" },
+          "actions_taken": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["status", "repos_total", "repos_ok", "prs_created", "next_actions"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pass", "fail", "partial"] },
+        "repos_total": { "type": "integer", "minimum": 0 },
+        "repos_ok": { "type": "integer", "minimum": 0 },
+        "prs_created": { "type": "integer", "minimum": 0 },
+        "next_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
