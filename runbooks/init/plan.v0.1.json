@@ -118,7 +118,7 @@
     {
       "id": "repo_evals",
       "type": "verify",
-      "description": "Run governance-related evals (repo checks) using aaa-evals runner",
+      "description": "Run governance-related evals (repo checks) after project creation using aaa-evals runner",
       "commands": [
         "aaa init repo-checks --org {{TARGET_ORG}} --from-plan plan.v0.1.json --suite governance"
       ],
