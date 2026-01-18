@@ -2,6 +2,7 @@ import typer
 
 app = typer.Typer(no_args_is_help=True)
 sync_app = typer.Typer(no_args_is_help=True)
+workflows_app = typer.Typer(no_args_is_help=True)
 
 
 def _version_callback(value: bool):
@@ -26,6 +27,12 @@ def version():
 def sync_skills(target: str = typer.Option("codex", help="codex|agent")):
     """Sync skills to the specified target (stub)."""
     typer.echo(f"sync skills stub -> target={target}")
+
+
+@sync_app.command("workflows")
+def sync_workflows(target: str = typer.Option("agent", help="agent")):
+    """Sync workflows to the specified target (stub)."""
+    typer.echo(f"sync workflows stub -> target={target}")
 
 
 @app.command()
