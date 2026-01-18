@@ -1,27 +1,34 @@
-# Local Codex CLI Procedure (v0.1)
+# 本地 Codex CLI 操作流程 (v0.1)
 
-This is the minimal local procedure to bootstrap a new project using Codex CLI.
+這份文件提供使用 Codex CLI 進行新專案初始化的最小操作流程。
 
-## 1) Prerequisites
-- `gh` CLI installed and authenticated (`gh auth status`)
-- `git` installed
-- `aaa` CLI available in PATH (`aaa --version`)
-- Network access enabled for GitHub
+## 1) 前置條件
+- 已安裝 `gh` CLI 並完成登入（`gh auth status`）
+- 已安裝 `git`
+- 已安裝 `aaa` CLI，且可執行（`aaa --version`）
+- 已允許 GitHub 網路存取
 
-## 2) One-line execution (Codex)
-Replace placeholders and run:
+## 2) 一鍵執行（Codex）
+建議用絕對路徑執行（避免工作區混亂），先設定 `AAA_ROOT` 與 `WORKSPACE_DIR`：
+
+```bash
+export AAA_ROOT=/path/to/aaa-tools
+export WORKSPACE_DIR=/path/to/projects/<PREFIX>_WORKSPACE
+```
+
+再替換佔位符後執行：
 
 ```bash
 codex exec --full-auto --json \
-  --output-schema aaa-tools/runbooks/init/output.schema.json \
-  "Use the AAA init runbook at aaa-tools/runbooks/init/INIT_PROJECT.md. \nInputs: PROJECT_NAME=<NAME>, PROJECT_PREFIX=<PREFIX>, TARGET_ORG=<ORG>, VISIBILITY=private. \nExecute the deterministic aaa init flow first, then handle exceptions and output the final JSON report only."
+  --output-schema $AAA_ROOT/runbooks/init/output.schema.json \
+  "請依照 $AAA_ROOT/runbooks/init/INIT_PROJECT.md 執行初始化流程。 \n輸入參數：PROJECT_NAME=<NAME>、PROJECT_PREFIX=<PREFIX>、TARGET_ORG=<ORG>、VISIBILITY=private、WORKSPACE_DIR=$WORKSPACE_DIR。 \n先執行 deterministic 的 aaa init 流程，遇到例外再處理，最後僅輸出 JSON 報告。"
 ```
 
-## 3) Expected output
-- Codex outputs a single JSON object (stdout) matching `output.schema.json`.
-- If errors occur, they are reported in the JSON under `failures` or `exceptions`.
+## 3) 預期輸出
+- Codex 在 stdout 輸出單一 JSON 物件，需符合 `output.schema.json`。
+- 若發生錯誤，會在 JSON 的 `failures` 或 `exceptions` 欄位中說明。
 
-## References
+## 參考文件
 - `aaa-tools/runbooks/init/INIT_PROJECT.md`
 - `aaa-tools/runbooks/init/plan.v0.1.json`
 - `aaa-tools/specs/CLI_CONTRACT.md`

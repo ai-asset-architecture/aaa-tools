@@ -57,6 +57,7 @@ Codex 必須取得下列輸入（可來自環境變數或 CLI 參數）：
 - `DEFAULT_BRANCH`：預設 `main`
 - `MODE`：`pr`（預設）或 `direct`（不建議）
 - `VISIBILITY`：`private`（預設）或 `public`
+- `WORKSPACE_DIR`：本地工作區路徑（絕對或相對路徑）
 
 ---
 
@@ -85,7 +86,7 @@ Codex 必須：
 Codex 必須呼叫（示例，實際參數以 plan 為準）：
 
 - 建議 PR 模式：
-  - `aaa init --plan aaa-tools/runbooks/init/plan.v0.1.json --mode pr`
+  - `aaa init --plan aaa-tools/runbooks/init/plan.v0.1.json --mode pr --workspace-dir "<WORKSPACE_DIR>"`
 
 aaa init 預期行為：
 - 建 repo（若不存在）

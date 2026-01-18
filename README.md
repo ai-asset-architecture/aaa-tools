@@ -24,5 +24,8 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 ## Skills Source of Truth
 `aaa-tools/skills` is the source of truth for Codex/agent skills. Consumers should sync from this repo.
 
+## Skills Index
+See `aaa-tools/skills/README.md` for the current skill list and naming rules.
+
 ## Install & Update
 TBD. Target state: `aaa` installed via a versioned package or a pinned binary. Until then, run from source after cloning this repo.
