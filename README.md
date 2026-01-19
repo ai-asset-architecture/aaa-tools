@@ -43,3 +43,6 @@ TBD. Target state: `aaa` installed via a versioned package or a pinned binary. U
 
 ## CLI 背景與使用說明
 See `aaa-tools/specs/aaa CLI 背景與使用說明.md`.
+
+## Release Notes
+- `aaa-tools/RELEASE_NOTES_v0.2.md`
