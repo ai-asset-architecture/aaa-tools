@@ -2,7 +2,7 @@
 name = "aaa-tools"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["typer>=0.12"]
+dependencies = ["typer>=0.12", "jsonschema>=4.21.1"]
 
 [project.scripts]
 aaa = "aaa.cli:app"
