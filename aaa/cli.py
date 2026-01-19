@@ -125,6 +125,11 @@ def _run_fallback() -> int:
     sync_workflows_parser.add_argument("--target", default="agent")
 
     init_parser = subparsers.add_parser("init")
+    init_parser.add_argument("--plan")
+    init_parser.add_argument("--mode", default="pr")
+    init_parser.add_argument("--jsonl", action="store_true")
+    init_parser.add_argument("--log-dir")
+    init_parser.add_argument("--dry-run", action="store_true")
     init_sub = init_parser.add_subparsers(dest="init_command")
 
     validate_parser = init_sub.add_parser("validate-plan")
@@ -192,6 +197,15 @@ def _run_fallback() -> int:
         parser.error("sync requires a subcommand")
 
     if args.command == "init":
+        if args.init_command is None and args.plan:
+            init_commands.run_plan(
+                plan=Path(args.plan),
+                mode=args.mode,
+                jsonl=args.jsonl,
+                log_dir=Path(args.log_dir) if args.log_dir else None,
+                dry_run=args.dry_run,
+            )
+            return 0
         if args.init_command == "validate-plan":
             init_commands.validate_plan(
                 plan=Path(args.plan),

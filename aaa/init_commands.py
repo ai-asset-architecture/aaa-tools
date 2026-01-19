@@ -40,6 +40,11 @@ else:
                 return func
 
             return decorator
+        def callback(self, *_args, **_kwargs):
+            def decorator(func):
+                return func
+
+            return decorator
 
     init_app = _NoOpApp()
 
@@ -274,6 +279,35 @@ def _write_log(log_dir: Optional[Path], name: str, content: str) -> None:
     (log_dir / name).write_text(content + "\n", encoding="utf-8")
 
 
+def _require_tool(name: str, jsonl: bool, command: str, step_id: str, dry_run: bool = False) -> bool:
+    if dry_run:
+        return True
+    if shutil.which(name):
+        return True
+    _emit_error_and_exit(
+        jsonl,
+        command,
+        step_id,
+        ERROR_ENV_PRECHECK_FAILED,
+        f"{name} not found in PATH",
+        {"tool": name},
+    )
+    return False
+
+
+class _Cwd:
+    def __init__(self, path: Path):
+        self.path = path
+        self.original = Path.cwd()
+
+    def __enter__(self):
+        os.chdir(self.path)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        os.chdir(self.original)
+
+
 @init_app.command("validate-plan")
 def validate_plan(
     plan: Path = typer.Option(..., "--plan", exists=False, readable=False),
@@ -336,6 +370,120 @@ def validate_plan(
     )
 
 
+@init_app.callback(invoke_without_command=True)
+def run_plan(
+    plan: Optional[Path] = typer.Option(None, "--plan"),
+    mode: str = typer.Option("pr", "--mode"),
+    jsonl: bool = typer.Option(False, "--jsonl"),
+    log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+):
+    if plan is None:
+        return
+    command = "aaa init"
+    step_id = "run_plan"
+    emit_jsonl(jsonl, event="start", status="start", command=command, step_id=step_id)
+
+    if not plan.exists():
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "plan not found",
+            {"path": str(plan)},
+        )
+
+    schema_path = REPO_ROOT / "specs" / "plan.schema.json"
+    plan_data = _plan_from_file(plan)
+    error = _validate_plan(plan_data, schema_path)
+    if error:
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_PLAN_VALIDATION_FAILED,
+            "plan validation failed",
+            error,
+        )
+
+    org = plan_data.get("target", {}).get("org")
+    if not org:
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "target org missing",
+        )
+
+    steps = plan_data.get("steps", [])
+    workspace_dir = Path(os.environ.get("WORKSPACE_DIR", Path.cwd()))
+    if not workspace_dir.exists():
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "WORKSPACE_DIR not found",
+            {"path": str(workspace_dir)},
+        )
+
+    for step in steps:
+        step_id_value = step.get("id")
+        if step_id_value == "preflight":
+            _require_tool("gh", jsonl, command, step_id, dry_run=dry_run)
+            _require_tool("git", jsonl, command, step_id, dry_run=dry_run)
+            emit_jsonl(
+                jsonl,
+                event="result",
+                status="ok" if not dry_run else "noop",
+                command=command,
+                step_id="preflight",
+                data={"status": "checked"},
+            )
+        elif step_id_value == "ensure_repos":
+            ensure_repos(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+        elif step_id_value == "apply_templates":
+            aaa_tag = _aaa_version_from_plan(plan_data)
+            apply_templates(
+                org=org,
+                from_plan=plan,
+                aaa_tag=aaa_tag,
+                jsonl=jsonl,
+                log_dir=log_dir,
+                dry_run=dry_run,
+            )
+        elif step_id_value == "sync_assets":
+            if dry_run:
+                emit_jsonl(
+                    jsonl,
+                    event="result",
+                    status="noop",
+                    command=command,
+                    step_id="sync_assets",
+                    data={"status": "dry_run"},
+                )
+            else:
+                with _Cwd(workspace_dir):
+                    from .cli import sync_skills, sync_workflows
+
+                    sync_skills(target="codex")
+                    sync_skills(target="agent")
+                    sync_workflows(target="agent")
+        elif step_id_value == "branch_protection":
+            protect(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+        elif step_id_value == "open_prs":
+            if mode == "pr":
+                open_prs(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+        elif step_id_value == "ci_verify":
+            verify_ci(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+        elif step_id_value == "repo_evals":
+            repo_checks(org=org, from_plan=plan, suite="governance", jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+
+    emit_jsonl(jsonl, event="result", status="ok", command=command, step_id=step_id, data={"status": "completed"})
+
+
 @init_app.command("ensure-repos")
 def ensure_repos(
     org: str = typer.Option(..., "--org"),
@@ -374,6 +522,18 @@ def ensure_repos(
             )
         full_name = _resolve_repo_full_name(org, repo_name)
 
+        if dry_run:
+            emit_jsonl(
+                jsonl,
+                event="result",
+                status="noop",
+                command=command,
+                step_id=step_id,
+                data={"repo": full_name, "status": "would_check"},
+            )
+            continue
+
+        _require_tool("gh", jsonl, command, step_id, dry_run=False)
         view_result = _run_command(["gh", "repo", "view", full_name, "--json", "url,defaultBranchRef,visibility"])
         if view_result.code == 0:
             data = json.loads(view_result.stdout or "{}")
@@ -402,17 +562,6 @@ def ensure_repos(
                 "permission denied",
                 {"repo": full_name, "details": view_result.stderr},
             )
-
-        if dry_run:
-            emit_jsonl(
-                jsonl,
-                event="result",
-                status="noop",
-                command=command,
-                step_id=step_id,
-                data={"repo": full_name, "status": "would_create"},
-            )
-            continue
 
         create_cmd = [
             "gh",
@@ -504,6 +653,19 @@ def apply_templates(
         if target_dir.exists():
             shutil.rmtree(target_dir)
 
+        if dry_run:
+            emit_jsonl(
+                jsonl,
+                event="result",
+                status="noop",
+                command=command,
+                step_id=step_id,
+                data={"repo": full_name, "status": "would_apply", "template_source": f"{template_full}@{aaa_tag}"},
+            )
+            continue
+
+        _require_tool("git", jsonl, command, step_id, dry_run=False)
+        _require_tool("gh", jsonl, command, step_id, dry_run=False)
         template_clone = _run_command(
             ["git", "clone", "--depth", "1", "--branch", aaa_tag, f"https://github.com/{template_full}.git", str(template_dir)]
         )
@@ -547,21 +709,6 @@ def apply_templates(
                 command=command,
                 step_id=step_id,
                 data={"repo": full_name, "status": "noop", "template_source": f"{template_full}@{aaa_tag}"},
-            )
-            continue
-
-        if dry_run:
-            emit_jsonl(
-                jsonl,
-                event="result",
-                status="warn",
-                command=command,
-                step_id=step_id,
-                data={
-                    "repo": full_name,
-                    "status": "would_update",
-                    "template_source": f"{template_full}@{aaa_tag}",
-                },
             )
             continue
 
@@ -675,6 +822,7 @@ def protect(
             )
             continue
 
+        _require_tool("gh", jsonl, command, step_id, dry_run=False)
         api_result = _run_command(
             [
                 "gh",
@@ -768,9 +916,8 @@ def verify_ci(
                 {"repo": full_name, "missing": missing},
             )
 
-        api_result = _run_command(
-            ["gh", "api", f"repos/{full_name}/commits/{default_branch}/check-runs"]
-        )
+        _require_tool("gh", jsonl, command, step_id, dry_run=False)
+        api_result = _run_command(["gh", "api", f"repos/{full_name}/commits/{default_branch}/check-runs"])
         if api_result.code != 0:
             _write_log(log_dir, "stderr.log", api_result.stderr)
             _emit_error_and_exit(
@@ -860,6 +1007,18 @@ def open_prs(
         branch_name = f"bootstrap/{project_slug}/{aaa_tag}"
         head = f"{org}:{branch_name}"
 
+        if dry_run:
+            emit_jsonl(
+                jsonl,
+                event="result",
+                status="noop",
+                command=command,
+                step_id=step_id,
+                data={"repo": full_name, "status": "would_create", "head": branch_name},
+            )
+            continue
+
+        _require_tool("gh", jsonl, command, step_id, dry_run=False)
         list_result = _run_command(
             ["gh", "api", f"repos/{full_name}/pulls", "--field", "state=open", "--field", f"head={head}"]
         )
@@ -876,17 +1035,6 @@ def open_prs(
                     data={"repo": full_name, "pr_url": pr_url, "status": "exists"},
                 )
                 continue
-
-        if dry_run:
-            emit_jsonl(
-                jsonl,
-                event="result",
-                status="noop",
-                command=command,
-                step_id=step_id,
-                data={"repo": full_name, "status": "would_create", "head": branch_name},
-            )
-            continue
 
         pr_create = _run_command(
             [
