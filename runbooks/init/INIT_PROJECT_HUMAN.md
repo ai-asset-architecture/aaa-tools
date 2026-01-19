@@ -1,4 +1,4 @@
-# 本地 Codex CLI 操作流程 (v0.1)
+# INIT_PROJECT_HUMAN.md — 本地操作流程 (v0.1)
 
 這份文件提供使用 Codex CLI 進行新專案初始化的最小操作流程。
 
@@ -23,7 +23,7 @@ export WORKSPACE_DIR=/path/to/projects/<PREFIX>_WORKSPACE
 ```bash
 codex exec --full-auto --json \
   --output-schema $AAA_ROOT/runbooks/init/output.schema.json \
-  "請依照 $AAA_ROOT/runbooks/init/INIT_PROJECT.md 執行初始化流程。 \n輸入參數：PROJECT_NAME=<NAME>、PROJECT_PREFIX=<PREFIX>、TARGET_ORG=<ORG>、VISIBILITY=private、WORKSPACE_DIR=$WORKSPACE_DIR。 \n先執行 deterministic 的 aaa init 流程，遇到例外再處理，最後僅輸出 JSON 報告。"
+  "請依照 $AAA_ROOT/runbooks/init/INIT_PROJECT_CODEX.md 執行初始化流程。 \n輸入參數：PROJECT_NAME=<NAME>、PROJECT_PREFIX=<PREFIX>、TARGET_ORG=<ORG>、VISIBILITY=private、WORKSPACE_DIR=$WORKSPACE_DIR。 \n先執行 deterministic 的 aaa init 流程，遇到例外再處理，最後僅輸出 JSON 報告。"
 ```
 
 ## 3) 預期輸出
@@ -32,7 +32,7 @@ codex exec --full-auto --json \
 - `aaa init --plan` 會在 `WORKSPACE_DIR` 產生 `aaa-init-report.json`。
 
 ## 參考文件
-- `aaa-tools/runbooks/init/INIT_PROJECT.md`
+- `aaa-tools/runbooks/init/INIT_PROJECT_CODEX.md`
 - `aaa-tools/runbooks/init/plan.v0.1.json`
 - `aaa-tools/specs/CLI_CONTRACT.md`
 - `.github/BOOTSTRAP_PROTOCOL.md`

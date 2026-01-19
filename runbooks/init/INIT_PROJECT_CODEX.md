@@ -1,4 +1,4 @@
-# INIT_PROJECT.md — AAA Project Bootstrap Runbook (v0.1)
+# INIT_PROJECT_CODEX.md — AAA Project Bootstrap Runbook (v0.1)
 
 本 Runbook 用於讓本地 Codex CLI 在「可聯網」環境下，依照 AAA v0.1 的治理與模板規範，完成新專案初始化。
 核心原則：**Deterministic（aaa init）為主，LLM（Codex）只做例外處理與報告生成。**
