@@ -20,6 +20,8 @@ All skills MUST follow `skills/SKILL_TEMPLATE.md` and include:
 
 **簡化規則**：若技能不需要分流，也必須保留三區塊並標明固定路徑與降級方式。
 
+詳細說明：`aaa-tools/specs/skill-architecture-v0.2.md`
+
 ## Skill Execution Test (Standard)
 - 每個 `common/aaa-*` 技能需提供 `tests/smoke.sh`
 - 測試可在缺少必要輸入時回報 `SKIP`，不得直接失敗
