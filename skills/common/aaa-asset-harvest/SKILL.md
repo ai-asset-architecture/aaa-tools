@@ -5,6 +5,42 @@ description: 用於從討論/修訂/驗證過程中萃取可沉澱的 AAA 資產
 
 # AAA Asset Harvest
 
+## Routing Logic
+
+### Hard Rules (Governance)
+- IF request includes secrets/credentials THEN stop and ask user to sanitize
+
+### Soft Rules (Scoring)
+- Base score: 0
+- +1 if change scope is single doc/update
+- +3 if multiple repos or multiple asset types involved
+
+### Routing Decision
+- Score < 3: single_path (produce minimal asset list)
+- Score >= 3: deep_path (include owners, baselines, and promotion steps)
+
+## Execution Steps
+1. Scan the recent discussion or changes for reusable patterns.
+2. List candidate assets (max 6) and map to repo types.
+3. Provide minimal file list and updates needed (README/baseline/schema).
+4. Flag any governance updates needed in `aaa-architecture.md`.
+
+## Fallback (Resilience)
+- IF context is unclear THEN ask for a short summary of changes before output.
+
+## Inputs / Outputs
+- Inputs: discussion summary, change list, target repos
+- Outputs: asset candidates, target repos, required file updates
+
+
+## Execution Test
+- Run: `./tests/smoke.sh`
+- Expected: `PASS` or `SKIP` with reason
+- Notes: requires inputs; if missing, return SKIP
+
+## Limitations
+- Heuristic only; does not implement changes automatically.
+
 ## 目標
 把「對話、修訂、驗證」中的可重用內容，轉成可落地的 AAA 資產建議與提交清單。
 

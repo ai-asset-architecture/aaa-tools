@@ -1,5 +1,37 @@
 # aaa-workflow-tag-audit
 
+## Routing Logic
+
+### Hard Rules (Governance)
+- IF repo path missing THEN stop and request target
+
+### Soft Rules (Scoring)
+- Base score: 0
+
+### Routing Decision
+- Score < 3: single_path (audit workflow tag pinning)
+
+## Execution Steps
+1. Scan .github/workflows files.
+2. Check uses lines for aaa-actions@<tag>.
+3. Report unpinned workflows.
+
+## Fallback (Resilience)
+- IF workflows missing THEN report no workflows to check.
+
+## Inputs / Outputs
+- Inputs: repo path
+- Outputs: list of unpinned workflows
+
+
+## Execution Test
+- Run: `./tests/smoke.sh`
+- Expected: `PASS` or `SKIP` with reason
+- Notes: requires inputs; if missing, return SKIP
+
+## Limitations
+- String check only; does not run workflows.
+
 ## Purpose
 Audit workflow references to ensure aaa-actions uses are pinned to tags.
 

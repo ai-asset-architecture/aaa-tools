@@ -35,6 +35,11 @@
 - Inputs: [list inputs]
 - Outputs: [list outputs]
 
+## Execution Test
+- Run: `./tests/smoke.sh`
+- Expected: `PASS` or `SKIP` with reason
+- Notes: list required inputs or environment
+
 ## Limitations
 - [limitations or boundaries]
 ---

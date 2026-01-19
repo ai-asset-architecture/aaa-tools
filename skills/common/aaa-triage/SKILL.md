@@ -36,5 +36,11 @@ description: 依任務複雜度與風險進行路由（Routing），決定使用
 - Inputs: user prompt, diff stats (files_changed, lines_changed, file types)
 - Outputs: route, score, risk level
 
+
+## Execution Test
+- Run: `./tests/smoke.sh`
+- Expected: `PASS` or `SKIP` with reason
+- Notes: requires inputs; if missing, return SKIP
+
 ## Limitations
 - Heuristics only; always allow override by human review.

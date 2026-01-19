@@ -16,8 +16,14 @@ All skills MUST follow `skills/SKILL_TEMPLATE.md` and include:
 - Execution Steps
 - Fallback (Resilience)
 - Inputs / Outputs + Limitations
+- Execution Test (tests/smoke.sh)
 
 **簡化規則**：若技能不需要分流，也必須保留三區塊並標明固定路徑與降級方式。
+
+## Skill Execution Test (Standard)
+- 每個 `common/aaa-*` 技能需提供 `tests/smoke.sh`
+- 測試可在缺少必要輸入時回報 `SKIP`，不得直接失敗
+- 測試需輸出 `PASS` / `SKIP` / `FAIL` 其中之一
 
 ## Usage
 - Codex CLI sync target: `.codex/skills/`
