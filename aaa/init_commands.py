@@ -2,7 +2,9 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
 import re
@@ -279,6 +281,21 @@ def _write_log(log_dir: Optional[Path], name: str, content: str) -> None:
     (log_dir / name).write_text(content + "\n", encoding="utf-8")
 
 
+def _rfc3339_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _tool_version(name: str) -> str:
+    if not shutil.which(name):
+        return "missing"
+    result = _run_command([name, "--version"])
+    return result.stdout.splitlines()[0] if result.stdout else "unknown"
+
+
+def _python_version() -> str:
+    return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+
 def _require_tool(name: str, jsonl: bool, command: str, step_id: str, dry_run: bool = False) -> bool:
     if dry_run:
         return True
@@ -306,6 +323,131 @@ class _Cwd:
 
     def __exit__(self, exc_type, exc, tb):
         os.chdir(self.original)
+
+
+class _ReportBuilder:
+    def __init__(self, plan: dict[str, Any], plan_path: Path, mode: str, workspace_dir: Path, dry_run: bool):
+        self.plan = plan
+        self.plan_path = plan_path
+        self.mode = mode
+        self.workspace_dir = workspace_dir
+        self.dry_run = dry_run
+        self.steps: list[dict[str, Any]] = []
+        self.repos: list[dict[str, Any]] = []
+        self._init_repos()
+
+    def _init_repos(self) -> None:
+        for repo in self.plan.get("repos", []):
+            self.repos.append(
+                {
+                    "name": repo.get("name", ""),
+                    "type": repo.get("type", "other"),
+                    "status": "exists",
+                    "url": "",
+                    "default_branch": self.plan.get("target", {}).get("default_branch", "main"),
+                    "template_applied": False,
+                    "template_source": "",
+                    "workflows_synced": False,
+                    "skills_synced": False,
+                    "pr_url": "",
+                    "notes": "",
+                }
+            )
+
+    def mark_repo(self, repo_name: str, **updates: Any) -> None:
+        for repo in self.repos:
+            if repo["name"] == repo_name:
+                repo.update(updates)
+                return
+
+    def add_step(self, step_id: str, status: str, started_at: str, ended_at: str, commands: Optional[list[str]] = None):
+        payload = {
+            "id": step_id,
+            "status": status,
+            "started_at": started_at,
+            "ended_at": ended_at,
+        }
+        if commands is not None:
+            payload["commands"] = commands
+        self.steps.append(payload)
+
+    def build(self, status: str, prs_created: int, next_actions: list[str]) -> dict[str, Any]:
+        aaa = self.plan.get("aaa", {})
+        target = self.plan.get("target", {})
+        required_checks = []
+        if self.plan.get("repos"):
+            required_checks = _required_checks_from_plan(self.plan["repos"][0])
+        branch_applied = status == "pass" and not self.dry_run
+        ci_overall = "pass" if status == "pass" and not self.dry_run else "partial"
+        report = {
+            "metadata": {
+                "report_version": "0.1",
+                "generated_at": _rfc3339_now(),
+                "aaa_org": aaa.get("org", ""),
+                "aaa_version_tag": aaa.get("version_tag", ""),
+                "target_org": target.get("org", ""),
+                "project_slug": target.get("project_slug", ""),
+                "mode": self.mode,
+                "visibility": target.get("visibility", "private"),
+                "default_branch": target.get("default_branch", "main"),
+            },
+            "inputs": {
+                "plan_path": str(self.plan_path),
+                "plan_version": self.plan.get("plan_version", ""),
+                "tools": {
+                    "gh": _tool_version("gh"),
+                    "git": _tool_version("git"),
+                    "python": _python_version(),
+                    "aaa": "aaa-tools 0.1.0",
+                },
+                "network_access": {
+                    "enabled": True,
+                    "allowed_endpoints": ["github.com", "api.github.com"],
+                    "external_downloads": False,
+                    "external_download_sources": [],
+                },
+            },
+            "repos": self.repos,
+            "steps": self.steps,
+            "branch_protection": {
+                "baseline_applied": branch_applied,
+                "required_checks": required_checks,
+                "settings": {
+                    "require_pr_reviews": True,
+                    "required_approvals": 1,
+                    "require_status_checks": True,
+                    "dismiss_stale_approvals": True,
+                    "prevent_force_push": True,
+                    "require_linear_history": True,
+                },
+                "per_repo": [
+                    {"repo": repo["name"], "applied": branch_applied, "missing_permissions": False, "notes": ""}
+                    for repo in self.repos
+                ],
+            },
+            "ci": {
+                "required_checks": required_checks,
+                "per_repo": [
+                    {
+                        "repo": repo["name"],
+                        "checks": [
+                            {"name": check, "status": "skipped", "details_url": ""}
+                            for check in required_checks
+                        ],
+                        "overall": ci_overall,
+                    }
+                    for repo in self.repos
+                ],
+            },
+            "summary": {
+                "status": "partial" if self.dry_run else status,
+                "repos_total": len(self.repos),
+                "repos_ok": len(self.repos) if status == "pass" and not self.dry_run else 0,
+                "prs_created": prs_created,
+                "next_actions": next_actions,
+            },
+        }
+        return report
 
 
 @init_app.command("validate-plan")
@@ -429,59 +571,160 @@ def run_plan(
             {"path": str(workspace_dir)},
         )
 
-    for step in steps:
-        step_id_value = step.get("id")
-        if step_id_value == "preflight":
-            _require_tool("gh", jsonl, command, step_id, dry_run=dry_run)
-            _require_tool("git", jsonl, command, step_id, dry_run=dry_run)
-            emit_jsonl(
-                jsonl,
-                event="result",
-                status="ok" if not dry_run else "noop",
-                command=command,
-                step_id="preflight",
-                data={"status": "checked"},
-            )
-        elif step_id_value == "ensure_repos":
-            ensure_repos(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
-        elif step_id_value == "apply_templates":
-            aaa_tag = _aaa_version_from_plan(plan_data)
-            apply_templates(
-                org=org,
-                from_plan=plan,
-                aaa_tag=aaa_tag,
-                jsonl=jsonl,
-                log_dir=log_dir,
-                dry_run=dry_run,
-            )
-        elif step_id_value == "sync_assets":
-            if dry_run:
+    report_builder = _ReportBuilder(plan_data, plan, mode, workspace_dir, dry_run=dry_run)
+    prs_created = 0
+    next_actions: list[str] = []
+
+    try:
+        for step in steps:
+            step_id_value = step.get("id")
+            started_at = _rfc3339_now()
+
+            if step_id_value == "preflight":
+                _require_tool("gh", jsonl, command, step_id, dry_run=dry_run)
+                _require_tool("git", jsonl, command, step_id, dry_run=dry_run)
                 emit_jsonl(
                     jsonl,
                     event="result",
-                    status="noop",
+                    status="ok" if not dry_run else "noop",
                     command=command,
-                    step_id="sync_assets",
-                    data={"status": "dry_run"},
+                    step_id="preflight",
+                    data={"status": "checked"},
+                )
+                report_builder.add_step(
+                    "preflight",
+                    "pass",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+                continue
+
+            if step_id_value == "ensure_repos":
+                ensure_repos(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                report_builder.add_step(
+                    "ensure_repos",
+                    "pass",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+            elif step_id_value == "apply_templates":
+                aaa_tag = _aaa_version_from_plan(plan_data)
+                apply_templates(
+                    org=org,
+                    from_plan=plan,
+                    aaa_tag=aaa_tag,
+                    jsonl=jsonl,
+                    log_dir=log_dir,
+                    dry_run=dry_run,
+                )
+                report_builder.add_step(
+                    "apply_templates",
+                    "pass",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+            elif step_id_value == "sync_assets":
+                if dry_run:
+                    emit_jsonl(
+                        jsonl,
+                        event="result",
+                        status="noop",
+                        command=command,
+                        step_id="sync_assets",
+                        data={"status": "dry_run"},
+                    )
+                else:
+                    with _Cwd(workspace_dir):
+                        from .cli import sync_skills, sync_workflows
+
+                        sync_skills(target="codex")
+                        sync_skills(target="agent")
+                        sync_workflows(target="agent")
+                    for repo in report_builder.repos:
+                        repo["workflows_synced"] = True
+                        repo["skills_synced"] = True
+                report_builder.add_step(
+                    "sync_assets",
+                    "pass",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+            elif step_id_value == "branch_protection":
+                protect(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                report_builder.add_step(
+                    "branch_protection",
+                    "pass",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+            elif step_id_value == "open_prs":
+                if mode == "pr":
+                    open_prs(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                    if not dry_run:
+                        prs_created += len(report_builder.repos)
+                report_builder.add_step(
+                    "open_prs",
+                    "pass" if mode == "pr" else "skipped",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+            elif step_id_value == "ci_verify":
+                verify_ci(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                report_builder.add_step(
+                    "ci_verify",
+                    "pass",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+            elif step_id_value == "repo_evals":
+                repo_checks(org=org, from_plan=plan, suite="governance", jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                report_builder.add_step(
+                    "repo_evals",
+                    "pass",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
                 )
             else:
-                with _Cwd(workspace_dir):
-                    from .cli import sync_skills, sync_workflows
+                report_builder.add_step(
+                    step_id_value or "unknown",
+                    "skipped",
+                    started_at,
+                    _rfc3339_now(),
+                    step.get("commands"),
+                )
+    except SystemExit:
+        report = report_builder.build("fail", prs_created, next_actions)
+        report_path = log_dir / "aaa-init-report.json" if log_dir else workspace_dir / "aaa-init-report.json"
+        report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
+        emit_jsonl(
+            jsonl,
+            event="result",
+            status="error",
+            command=command,
+            step_id=step_id,
+            data={"report_path": str(report_path)},
+        )
+        raise
 
-                    sync_skills(target="codex")
-                    sync_skills(target="agent")
-                    sync_workflows(target="agent")
-        elif step_id_value == "branch_protection":
-            protect(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
-        elif step_id_value == "open_prs":
-            if mode == "pr":
-                open_prs(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
-        elif step_id_value == "ci_verify":
-            verify_ci(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
-        elif step_id_value == "repo_evals":
-            repo_checks(org=org, from_plan=plan, suite="governance", jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
-
-    emit_jsonl(jsonl, event="result", status="ok", command=command, step_id=step_id, data={"status": "completed"})
+    report = report_builder.build("pass", prs_created, next_actions)
+    report_path = log_dir / "aaa-init-report.json" if log_dir else workspace_dir / "aaa-init-report.json"
+    report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
+    emit_jsonl(
+        jsonl,
+        event="result",
+        status="ok",
+        command=command,
+        step_id=step_id,
+        data={"status": "completed", "report_path": str(report_path)},
+    )
 
 
 @init_app.command("ensure-repos")
