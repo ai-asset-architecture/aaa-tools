@@ -16,6 +16,8 @@ export AAA_ROOT=/path/to/aaa-tools
 export WORKSPACE_DIR=/path/to/projects/<PREFIX>_WORKSPACE
 ```
 
+`aaa init` 會使用 `WORKSPACE_DIR` 作為本地 repo 的基準目錄。
+
 再替換佔位符後執行：
 
 ```bash
@@ -27,6 +29,7 @@ codex exec --full-auto --json \
 ## 3) 預期輸出
 - Codex 在 stdout 輸出單一 JSON 物件，需符合 `output.schema.json`。
 - 若發生錯誤，會在 JSON 的 `failures` 或 `exceptions` 欄位中說明。
+- `aaa init --plan` 會在 `WORKSPACE_DIR` 產生 `aaa-init-report.json`。
 
 ## 參考文件
 - `aaa-tools/runbooks/init/INIT_PROJECT.md`

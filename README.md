@@ -20,6 +20,14 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 - `aaa sync` - sync skills/assets to local targets
 - `aaa lint` - validate required docs/sections
 - `aaa eval` - run eval suites and report results
+- `aaa init validate-plan` - validate plan JSON against schema
+- `aaa init ensure-repos` - create repos if missing
+- `aaa init apply-templates` - apply aaa templates to repos
+- `aaa init protect` - apply branch protection baseline
+- `aaa init open-prs` - open bootstrap PRs
+- `aaa init verify-ci` - verify lint/test/eval checks
+- `aaa init repo-checks` - run governance repo checks
+- `aaa init --plan` - run full bootstrap from plan and emit report
 
 ## Skills Source of Truth
 `aaa-tools/skills` is the source of truth for Codex/agent skills. Consumers should sync from this repo.

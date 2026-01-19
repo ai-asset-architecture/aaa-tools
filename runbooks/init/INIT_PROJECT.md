@@ -86,7 +86,7 @@ Codex 必須：
 Codex 必須呼叫（示例，實際參數以 plan 為準）：
 
 - 建議 PR 模式：
-  - `aaa init --plan aaa-tools/runbooks/init/plan.v0.1.json --mode pr --workspace-dir "<WORKSPACE_DIR>"`
+  - `WORKSPACE_DIR="<WORKSPACE_DIR>" aaa init --plan aaa-tools/runbooks/init/plan.v0.1.json --mode pr`
 
 aaa init 預期行為：
 - 建 repo（若不存在）

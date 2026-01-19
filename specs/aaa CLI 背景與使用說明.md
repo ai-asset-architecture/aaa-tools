@@ -37,7 +37,10 @@ Codex 要自動化時，需要確定的入口：
 - `aaa init ensure-repos`
 - `aaa init apply-templates`
 - `aaa init protect`
+- `aaa init open-prs`
 - `aaa init verify-ci`
+- `aaa init repo-checks`
+- `aaa init --plan`
 
 Codex 不適合自己臨時做決策，它需要你提供可呼叫的工具。
 CLI 就是 Codex 的「手」。
@@ -61,7 +64,7 @@ aaa init --plan runbooks/init/plan.v0.1.json --mode pr
 - 設 branch protection
 - 開 PR
 - 驗 CI
-- 輸出報告
+- 輸出報告（`aaa-init-report.json`，符合 `output.schema.json`）
 
 ---
 
