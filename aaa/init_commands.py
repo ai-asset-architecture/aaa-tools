@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -252,6 +253,14 @@ def _default_branch_from_plan(plan: dict[str, Any]) -> str:
 def _required_checks_from_plan(repo: dict[str, Any]) -> list[str]:
     checks = repo.get("required_checks") or []
     return [str(check) for check in checks]
+
+
+def _aaa_version_from_plan(plan: dict[str, Any]) -> str:
+    return plan.get("aaa", {}).get("version_tag", "v0.1.0")
+
+
+def _project_slug_from_plan(plan: dict[str, Any]) -> str:
+    return plan.get("target", {}).get("project_slug", "project")
 
 
 def _missing_required_checks(checks: Iterable[str]) -> list[str]:
@@ -806,4 +815,229 @@ def verify_ci(
             command=command,
             step_id=step_id,
             data={"repo": full_name, "checks": checks, "status": "pass"},
+        )
+
+
+@init_app.command("open-prs")
+def open_prs(
+    org: str = typer.Option(..., "--org"),
+    from_plan: Path = typer.Option(..., "--from-plan"),
+    jsonl: bool = typer.Option(False, "--jsonl"),
+    log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+):
+    command = "aaa init open-prs"
+    step_id = "open_prs"
+    emit_jsonl(jsonl, event="start", status="start", command=command, step_id=step_id)
+
+    if not from_plan.exists():
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "plan not found",
+            {"path": str(from_plan)},
+        )
+
+    plan = _plan_from_file(from_plan)
+    default_branch = _default_branch_from_plan(plan)
+    aaa_tag = _aaa_version_from_plan(plan)
+    project_slug = _project_slug_from_plan(plan)
+    repos = plan.get("repos", [])
+
+    for repo in repos:
+        repo_name = str(repo.get("name", "")).strip()
+        if not repo_name:
+            _emit_error_and_exit(
+                jsonl,
+                command,
+                step_id,
+                ERROR_INVALID_ARGUMENT,
+                "repo name missing in plan",
+            )
+        full_name = _resolve_repo_full_name(org, repo_name)
+        branch_name = f"bootstrap/{project_slug}/{aaa_tag}"
+        head = f"{org}:{branch_name}"
+
+        list_result = _run_command(
+            ["gh", "api", f"repos/{full_name}/pulls", "--field", "state=open", "--field", f"head={head}"]
+        )
+        if list_result.code == 0 and list_result.stdout:
+            existing = json.loads(list_result.stdout)
+            if existing:
+                pr_url = existing[0].get("html_url") or existing[0].get("url")
+                emit_jsonl(
+                    jsonl,
+                    event="result",
+                    status="noop",
+                    command=command,
+                    step_id=step_id,
+                    data={"repo": full_name, "pr_url": pr_url, "status": "exists"},
+                )
+                continue
+
+        if dry_run:
+            emit_jsonl(
+                jsonl,
+                event="result",
+                status="noop",
+                command=command,
+                step_id=step_id,
+                data={"repo": full_name, "status": "would_create", "head": branch_name},
+            )
+            continue
+
+        pr_create = _run_command(
+            [
+                "gh",
+                "pr",
+                "create",
+                "--repo",
+                full_name,
+                "--title",
+                f"chore: apply aaa templates ({aaa_tag})",
+                "--body",
+                "Automated bootstrap update from aaa templates.",
+                "--base",
+                default_branch,
+                "--head",
+                branch_name,
+            ]
+        )
+        if pr_create.code != 0:
+            _write_log(log_dir, "stderr.log", pr_create.stderr)
+            _emit_error_and_exit(
+                jsonl,
+                command,
+                step_id,
+                ERROR_PR_CREATE_FAILED,
+                "pr create failed",
+                {"repo": full_name, "details": pr_create.stderr},
+            )
+
+        pr_url = pr_create.stdout.strip()
+        emit_jsonl(
+            jsonl,
+            event="result",
+            status="ok",
+            command=command,
+            step_id=step_id,
+            data={"repo": full_name, "pr_url": pr_url, "status": "created"},
+        )
+
+
+@init_app.command("repo-checks")
+def repo_checks(
+    org: str = typer.Option(..., "--org"),
+    from_plan: Path = typer.Option(..., "--from-plan"),
+    suite: str = typer.Option(..., "--suite"),
+    jsonl: bool = typer.Option(False, "--jsonl"),
+    log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+):
+    command = "aaa init repo-checks"
+    step_id = "repo_evals"
+    emit_jsonl(jsonl, event="start", status="start", command=command, step_id=step_id)
+
+    if not from_plan.exists():
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "plan not found",
+            {"path": str(from_plan)},
+        )
+
+    if suite != "governance":
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "unsupported suite",
+            {"suite": suite},
+        )
+
+    plan = _plan_from_file(from_plan)
+    repos = plan.get("repos", [])
+    workspace_dir = Path(os.environ.get("WORKSPACE_DIR", Path.cwd()))
+    evals_root = Path(os.environ.get("AAA_EVALS_ROOT", REPO_ROOT.parent / "aaa-evals"))
+    runner = evals_root / "runner" / "run_repo_checks.py"
+
+    if not runner.exists():
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_REPO_CHECKS_FAILED,
+            "runner not found",
+            {"path": str(runner)},
+        )
+
+    checks = ["readme", "workflow", "skills", "prompt"]
+    failed = []
+
+    for repo in repos:
+        repo_name = str(repo.get("name", "")).strip()
+        if not repo_name:
+            _emit_error_and_exit(
+                jsonl,
+                command,
+                step_id,
+                ERROR_INVALID_ARGUMENT,
+                "repo name missing in plan",
+            )
+        repo_dir_name = repo_name.split("/")[-1]
+        repo_path = workspace_dir / repo_dir_name
+        if dry_run:
+            emit_jsonl(
+                jsonl,
+                event="result",
+                status="noop",
+                command=command,
+                step_id=step_id,
+                data={"repo": repo_name, "status": "dry_run"},
+            )
+            continue
+
+        if not repo_path.exists():
+            failed.append({"repo": repo_name, "check": "repo_path", "message": "repo path missing"})
+            continue
+
+        repo_results = []
+        for check in checks:
+            run_result = _run_command(
+                ["python3", str(runner), "--check", check, "--repo", str(repo_path)]
+            )
+            try:
+                payload = json.loads(run_result.stdout) if run_result.stdout else {}
+            except json.JSONDecodeError:
+                payload = {"pass": False, "details": [run_result.stderr or "invalid output"]}
+
+            repo_results.append(
+                {"id": check, "status": "pass" if payload.get("pass") else "fail", "message": payload.get("details")}
+            )
+            if not payload.get("pass"):
+                failed.append({"repo": repo_name, "check": check, "message": payload.get("details")})
+
+        emit_jsonl(
+            jsonl,
+            event="result",
+            status="ok",
+            command=command,
+            step_id=step_id,
+            data={"repo": repo_name, "suite": suite, "checks": repo_results},
+        )
+
+    if failed:
+        _write_log(log_dir, "stderr.log", json.dumps(failed))
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_REPO_CHECKS_FAILED,
+            "repo checks failed",
+            {"failures": failed},
         )

@@ -162,6 +162,21 @@ def _run_fallback() -> int:
     verify_parser.add_argument("--log-dir")
     verify_parser.add_argument("--dry-run", action="store_true")
 
+    open_prs_parser = init_sub.add_parser("open-prs")
+    open_prs_parser.add_argument("--org", required=True)
+    open_prs_parser.add_argument("--from-plan", required=True)
+    open_prs_parser.add_argument("--jsonl", action="store_true")
+    open_prs_parser.add_argument("--log-dir")
+    open_prs_parser.add_argument("--dry-run", action="store_true")
+
+    repo_checks_parser = init_sub.add_parser("repo-checks")
+    repo_checks_parser.add_argument("--org", required=True)
+    repo_checks_parser.add_argument("--from-plan", required=True)
+    repo_checks_parser.add_argument("--suite", required=True)
+    repo_checks_parser.add_argument("--jsonl", action="store_true")
+    repo_checks_parser.add_argument("--log-dir")
+    repo_checks_parser.add_argument("--dry-run", action="store_true")
+
     args = parser.parse_args()
     if args.version:
         print("aaa-tools 0.1.0")
@@ -217,6 +232,25 @@ def _run_fallback() -> int:
             init_commands.verify_ci(
                 org=args.org,
                 from_plan=Path(args.from_plan),
+                jsonl=args.jsonl,
+                log_dir=Path(args.log_dir) if args.log_dir else None,
+                dry_run=args.dry_run,
+            )
+            return 0
+        if args.init_command == "open-prs":
+            init_commands.open_prs(
+                org=args.org,
+                from_plan=Path(args.from_plan),
+                jsonl=args.jsonl,
+                log_dir=Path(args.log_dir) if args.log_dir else None,
+                dry_run=args.dry_run,
+            )
+            return 0
+        if args.init_command == "repo-checks":
+            init_commands.repo_checks(
+                org=args.org,
+                from_plan=Path(args.from_plan),
+                suite=args.suite,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
