@@ -23,7 +23,7 @@ All skills MUST follow `skills/SKILL_TEMPLATE.md` and include:
 - Codex CLI sync target: `.codex/skills/`
 - Antigravity sync target: `.agent/skills/`
 
-## Included Common Skills (v0.1)
+## Included Common Skills (v0.2)
 - `aaa-evals-governance-check`
 - `aaa-prompts-schema-validate`
 - `aaa-init-validate-plan`
