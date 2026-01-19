@@ -432,6 +432,6 @@ If `--log-dir` is provided, the CLI MUST write:
 
 - Contract version: `v0.1`
 - Any breaking change requires bump to `v0.2` and updates to:
-  - INIT_PROJECT_CODEX.md
+  - AGENT_BOOTSTRAP.md
   - plan schema expectations
   - output schema (if needed)
