@@ -10,6 +10,13 @@ This folder is the single source of truth (SSOT) for AAA skills.
 ## Naming Convention
 - Use the `aaa-` prefix for all org skills to avoid collisions.
 
+## Skill Architecture (v0.2)
+All skills MUST follow `skills/SKILL_TEMPLATE.md` and include:
+- Routing Logic (Hard Rules + Soft Rules)
+- Execution Steps
+- Fallback (Resilience)
+- Inputs / Outputs + Limitations
+
 ## Usage
 - Codex CLI sync target: `.codex/skills/`
 - Antigravity sync target: `.agent/skills/`
@@ -23,6 +30,7 @@ This folder is the single source of truth (SSOT) for AAA skills.
 - `aaa-docs-link-audit`
 - `aaa-governance-audit`
 - `aaa-asset-harvest`
+- `aaa-triage`
 
 ## Skills Catalog (aaa-*)
 
@@ -36,6 +44,17 @@ This folder is the single source of truth (SSOT) for AAA skills.
   - Output: 資產類型、落點 repo、命名建議、需更新檔案清單
 - **Limitations**:
   - 僅產出「最小可用」清單，不自動實作與提交
+
+### `aaa-triage`
+- **Description**: 依任務複雜度與風險進行路由，決定模型/工具或是否需要人類審核。
+- **Apply Scenario**: 需要先分流再執行的任務（修訂、重構、CI 修復）。
+- **Usage Example**:
+  - 「先做 triage 再決定用哪個模型」
+- **Expected I/O**:
+  - Input: prompt 或 diff stats（檔案類型/行數/檔案數）
+  - Output: route + score + risk
+- **Limitations**:
+  - 規則為啟發式，允許人類覆寫
 
 ### `aaa-evals-governance-check`
 - **Description**: 彙整治理規則相關檢查並輸出報告。

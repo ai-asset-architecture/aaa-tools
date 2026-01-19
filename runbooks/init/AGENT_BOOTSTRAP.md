@@ -135,7 +135,11 @@ Codex 必須：
    - branch protection API 權限不足
    - workflows 引用錯誤（tag/ref）
 3) 優先採取「修正設定 / 重跑」策略，不直接手改大量檔案
-4) 修復後再次 `aaa init --plan ...`（必須可重跑）
+4) 若為 Network/Timeout 類錯誤：
+   - 重試至多 3 次（每次間隔 5 秒）
+   - 仍失敗則產出 `manual_bootstrap.sh`（寫入 WORKSPACE_DIR），內容包含失敗的指令
+   - 回報「已降級為手動模式」，請使用者執行腳本
+5) 修復後再次 `aaa init --plan ...`（必須可重跑）
 
 報告標記：
 - `exceptions[].code = "E2_AAA_INIT_FAILED"`
