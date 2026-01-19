@@ -31,4 +31,4 @@ See `aaa-tools/skills/README.md` for the current skill list and naming rules.
 TBD. Target state: `aaa` installed via a versioned package or a pinned binary. Until then, run from source after cloning this repo.
 
 ## CLI 背景與使用說明
-See `aaa-tools/docs/aaa CLI 背景與使用說明.md`.
+See `aaa-tools/specs/aaa CLI 背景與使用說明.md`.
