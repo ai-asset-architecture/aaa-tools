@@ -17,6 +17,8 @@ All skills MUST follow `skills/SKILL_TEMPLATE.md` and include:
 - Fallback (Resilience)
 - Inputs / Outputs + Limitations
 
+**簡化規則**：若技能不需要分流，也必須保留三區塊並標明固定路徑與降級方式。
+
 ## Usage
 - Codex CLI sync target: `.codex/skills/`
 - Antigravity sync target: `.agent/skills/`
