@@ -22,3 +22,4 @@ This folder is the single source of truth (SSOT) for AAA skills.
 - `aaa-workflow-tag-audit`
 - `aaa-docs-link-audit`
 - `aaa-governance-audit`
+- `aaa-asset-harvest`
