@@ -35,6 +35,9 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 ## Skills Index
 See `aaa-tools/skills/README.md` for the current skill list and naming rules.
 
+## Governance Audits
+- `aaa-gh-org-audit` - audit GitHub org settings and repo compliance (writes report to `aaa-tpl-docs/reports/`).
+
 ## Install & Update
 TBD. Target state: `aaa` installed via a versioned package or a pinned binary. Until then, run from source after cloning this repo.
 
