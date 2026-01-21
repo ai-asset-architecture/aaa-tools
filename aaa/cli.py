@@ -1,4 +1,5 @@
 import argparse
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -9,6 +10,7 @@ except Exception:  # pragma: no cover - fallback when typer isn't available
     typer = None
 
 from . import init_commands
+from . import governance_commands
 from . import runbook_registry
 
 if typer:
@@ -66,6 +68,7 @@ if typer:
 
 if typer:
     run_typer = typer.Typer(no_args_is_help=True)
+    governance_typer = typer.Typer(no_args_is_help=True)
 
     @run_typer.command("runbook")
     def run_runbook(spec: str):
@@ -78,6 +81,32 @@ if typer:
         typer.echo(f"runbook resolved: {path}")
         typer.echo(f"runbook id: {payload.get('metadata', {}).get('id')}")
         typer.echo(f"runbook version: {payload.get('metadata', {}).get('version')}")
+
+    @governance_typer.command("update-index")
+    def governance_update_index(
+        target_dir: Path = typer.Option(..., "--target-dir", help="Directory to scan"),
+        pattern: str = typer.Option("*.md", "--pattern", help="Glob pattern for files"),
+        readme_template: str = typer.Option(..., "--template", help="README template"),
+        index_output: str = typer.Option("index.json", "--index-output", help="Index filename"),
+        metadata_field: list[str] | None = typer.Option(None, "--metadata-field", help="Frontmatter keys to include"),
+        include_frontmatter: bool = typer.Option(True, "--include-frontmatter/--no-include-frontmatter"),
+        sort_by: str = typer.Option("filename", "--sort-by", help="filename/last_modified/frontmatter:<key>"),
+        hash_algo: str = typer.Option("sha256", "--hash-algo", help="sha256/sha1"),
+        dry_run: bool = typer.Option(False, "--dry-run", help="Render without writing files"),
+    ):
+        """Generate README.md and index.json for a directory."""
+        payload = governance_commands.update_index_cli(
+            target_dir=str(target_dir),
+            pattern=pattern,
+            readme_template=readme_template,
+            index_output=index_output,
+            metadata_fields=metadata_field,
+            include_frontmatter=include_frontmatter,
+            sort_by=sort_by,
+            hash_algo=hash_algo,
+            dry_run=dry_run,
+        )
+        typer.echo(json.dumps(payload, indent=2))
 
 
 def sync_skills(target: str = "codex"):
@@ -128,6 +157,7 @@ if typer:
     app.add_typer(sync_typer, name="sync")
     app.add_typer(init_commands.init_app, name="init")
     app.add_typer(run_typer, name="run")
+    app.add_typer(governance_typer, name="governance")
 
 
 def _run_fallback() -> int:
@@ -204,6 +234,20 @@ def _run_fallback() -> int:
     run_sub = run_parser.add_subparsers(dest="run_command")
     runbook_parser = run_sub.add_parser("runbook")
     runbook_parser.add_argument("spec")
+
+    governance_parser = subparsers.add_parser("governance")
+    governance_sub = governance_parser.add_subparsers(dest="governance_command")
+    update_index_parser = governance_sub.add_parser("update-index")
+    update_index_parser.add_argument("--target-dir", required=True)
+    update_index_parser.add_argument("--pattern", default="*.md")
+    update_index_parser.add_argument("--template", required=True)
+    update_index_parser.add_argument("--index-output", default="index.json")
+    update_index_parser.add_argument("--metadata-field", action="append")
+    update_index_parser.add_argument("--include-frontmatter", action="store_true")
+    update_index_parser.add_argument("--no-include-frontmatter", action="store_true")
+    update_index_parser.add_argument("--sort-by", default="filename")
+    update_index_parser.add_argument("--hash-algo", default="sha256")
+    update_index_parser.add_argument("--dry-run", action="store_true")
 
     args = parser.parse_args()
     if args.version:
@@ -292,6 +336,25 @@ def _run_fallback() -> int:
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
             )
+            return 0
+
+    if args.command == "governance":
+        if args.governance_command == "update-index":
+            include_frontmatter = True
+            if args.no_include_frontmatter:
+                include_frontmatter = False
+            payload = governance_commands.update_index_cli(
+                target_dir=args.target_dir,
+                pattern=args.pattern,
+                readme_template=args.template,
+                index_output=args.index_output,
+                metadata_fields=args.metadata_field,
+                include_frontmatter=include_frontmatter,
+                sort_by=args.sort_by,
+                hash_algo=args.hash_algo,
+                dry_run=args.dry_run,
+            )
+            print(json.dumps(payload, indent=2))
             return 0
         parser.error("init requires a subcommand")
 

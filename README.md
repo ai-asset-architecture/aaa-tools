@@ -21,6 +21,7 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 - `aaa lint` - validate required docs/sections
 - `aaa eval` - run eval suites and report results
 - `aaa run runbook <id>@<version>` - execute a runbook by id and version
+- `aaa governance update-index` - generate README.md/index.json for a directory
 - `aaa init validate-plan` - validate plan JSON against schema
 - `aaa init ensure-repos` - create repos if missing
 - `aaa init apply-templates` - apply aaa templates to repos
