@@ -64,6 +64,9 @@ All `aaa init <subcommand>` must accept:
   - emit a final JSONL event with `status="noop"`
 - No interactive prompts in automation mode.
   - If user input is required, exit with a specific error code and message.
+ - CI verification MUST be stateless.
+   - Results must not depend on local caches or developer machines.
+   - The same inputs must yield the same outputs in a clean environment.
 
 ---
 
@@ -380,6 +383,8 @@ Behavior:
   - emit `error` event
   - exit with corresponding code
 - MAY support `--continue-on-error` in future versions (not in v0.1).
+- MUST include a post-init audit by running `repo-checks` when available in the plan.
+  - This is required to close the governance loop after initialization.
 
 Outputs:
 - JSONL events with `step_id` matching plan step ids.
