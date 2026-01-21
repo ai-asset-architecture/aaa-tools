@@ -26,6 +26,14 @@ Design goals:
 
 ---
 
+## 0.5 Runbook Runtime (v0.5)
+
+Runbooks are executed via `aaa run runbook <id>@<version>` and must validate against
+`specs/runbook.schema.json` before execution. Runtime MUST reject runbooks that
+fail schema validation or checksum verification.
+
+---
+
 ## 1) Global Conventions
 
 ### 1.1 Command Family
@@ -64,9 +72,9 @@ All `aaa init <subcommand>` must accept:
   - emit a final JSONL event with `status="noop"`
 - No interactive prompts in automation mode.
   - If user input is required, exit with a specific error code and message.
- - CI verification MUST be stateless.
-   - Results must not depend on local caches or developer machines.
-   - The same inputs must yield the same outputs in a clean environment.
+- CI verification MUST be stateless.
+  - Results must not depend on local caches or developer machines.
+  - The same inputs must yield the same outputs in a clean environment.
 
 ---
 

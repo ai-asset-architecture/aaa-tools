@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-asset-architecture/specs/runbook.schema.json",
+  "title": "AAA Runbook Schema (v0.5)",
+  "type": "object",
+  "required": ["metadata", "contract", "steps"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["id", "version", "source", "checksum", "requires_engine"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+        "source": {"type": "string", "minLength": 1},
+        "checksum": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+        "requires_engine": {"type": "string", "minLength": 1}
+      }
+    },
+    "contract": {
+      "type": "object",
+      "required": [
+        "inputs",
+        "preconditions",
+        "outputs",
+        "required_scopes",
+        "timeout_seconds",
+        "idempotency_check",
+        "error_codes"
+      ],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {"type": "object"},
+          "minItems": 0
+        },
+        "preconditions": {
+          "type": "array",
+          "items": {"type": "object"},
+          "minItems": 0
+        },
+        "outputs": {
+          "type": "array",
+          "items": {"type": "object"},
+          "minItems": 0
+        },
+        "required_scopes": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 0
+        },
+        "timeout_seconds": {"type": "integer", "minimum": 1},
+        "idempotency_check": {
+          "type": "object",
+          "required": ["command", "expect_exit_code"],
+          "properties": {
+            "command": {"type": "string", "minLength": 1},
+            "expect_exit_code": {"type": "integer"}
+          }
+        },
+        "error_codes": {
+          "type": "array",
+          "items": {"type": "object"},
+          "minItems": 0
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "action"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "action": {"type": "string", "minLength": 1},
+          "args": {"type": "array"}
+        }
+      }
+    },
+    "observability": {
+      "type": "object",
+      "required": ["emit_events", "audit_artifacts", "failure_modes", "declared_side_effects"],
+      "properties": {
+        "emit_events": {"type": "boolean"},
+        "audit_artifacts": {"type": "array", "items": {"type": "string"}},
+        "failure_modes": {"type": "array", "items": {"type": "object"}},
+        "declared_side_effects": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "extensions": {
+      "type": "object"
+    }
+  }
+}
