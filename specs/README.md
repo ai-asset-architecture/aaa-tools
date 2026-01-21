@@ -1,0 +1,1 @@
+# Specs Index\n\n- CLI_CONTRACT.md | CLI_CONTRACT.md — AAA Tools CLI Contract (v0.1)\n- aaa CLI 背景與使用說明.md | aaa CLI 背景與使用說明\n- skill-architecture-v0.2.md | Skill Architecture v0.2 (Decision-Tree Driven)\n
