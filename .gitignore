@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 aaa_tools.egg-info/
 .worktrees/
+/tests/_tmp_fs/
