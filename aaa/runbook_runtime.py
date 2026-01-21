@@ -1,8 +1,11 @@
 import json
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from . import governance_index
 
 
 def execute_runbook(runbook: dict[str, Any], inputs: dict[str, Any]) -> dict[str, Any]:
@@ -22,6 +25,10 @@ def _dispatch_action(action: str, args: list[str]) -> dict[str, Any]:
         return _fs_write(args)
     if action == "fs_update_frontmatter":
         return _fs_update_frontmatter(args)
+    if action == "governance.update_index":
+        return _governance_update_index(args)
+    if action == "aaa_evals.run":
+        return _aaa_evals_run(args)
     raise ValueError(f"unsupported action: {action}")
 
 
@@ -59,6 +66,26 @@ def _fs_update_frontmatter(args: list[str]) -> dict[str, Any]:
     return {"path": str(path), "updated_keys": sorted(updates.keys())}
 
 
+def _governance_update_index(args: list[str]) -> dict[str, Any]:
+    options = _parse_flag_args(args)
+    payload = governance_index.update_index(
+        target_dir=options.get("target-dir", ""),
+        pattern=options.get("pattern", "*.md"),
+        readme_template=options.get("template", ""),
+        index_output=options.get("index-output", "index.json"),
+        metadata_fields=options.get("metadata-field", []),
+    )
+    return {"payload": payload}
+
+
+def _aaa_evals_run(args: list[str]) -> dict[str, Any]:
+    payload = _args_to_dict(args)
+    suite = payload.get("suite", "")
+    command = ["python3", "-m", "aaa.cli", "eval", suite]
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
+
+
 def _render_args(args: list[str], inputs: dict[str, Any], steps: list[dict[str, Any]]) -> list[str]:
     rendered = []
     for item in args:
@@ -89,6 +116,27 @@ def _args_to_dict(args: list[str]) -> dict[str, Any]:
         except StopIteration:
             value = ""
         result[key] = value
+    return result
+
+
+def _parse_flag_args(args: list[str]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    it = iter(range(len(args)))
+    idx = 0
+    while idx < len(args):
+        token = args[idx]
+        if token.startswith("--"):
+            key = token[2:]
+            value = ""
+            if idx + 1 < len(args):
+                value = args[idx + 1]
+            if key == "metadata-field":
+                result.setdefault(key, []).append(value)
+            else:
+                result[key] = value
+            idx += 2
+            continue
+        idx += 1
     return result
 
 
