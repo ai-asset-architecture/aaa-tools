@@ -1,6 +1,7 @@
 import json
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 
@@ -17,6 +18,10 @@ def _dispatch_action(action: str, args: list[str]) -> dict[str, Any]:
     if action == "notify":
         payload = _notify_stdout(args)
         return {"payload": payload}
+    if action == "fs_write":
+        return _fs_write(args)
+    if action == "fs_update_frontmatter":
+        return _fs_update_frontmatter(args)
     raise ValueError(f"unsupported action: {action}")
 
 
@@ -33,6 +38,25 @@ def _notify_stdout(args: list[str]) -> dict[str, Any]:
     }
     print(json.dumps(structured, ensure_ascii=True))
     return structured
+
+
+def _fs_write(args: list[str]) -> dict[str, Any]:
+    payload = _args_to_dict(args)
+    path = Path(payload.get("path", ""))
+    content = payload.get("content", "")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    return {"path": str(path)}
+
+
+def _fs_update_frontmatter(args: list[str]) -> dict[str, Any]:
+    path, updates = _parse_frontmatter_args(args)
+    content = path.read_text(encoding="utf-8")
+    metadata, body = _parse_frontmatter(content)
+    metadata.update(updates)
+    updated = _render_frontmatter(metadata, body)
+    path.write_text(updated, encoding="utf-8")
+    return {"path": str(path), "updated_keys": sorted(updates.keys())}
 
 
 def _render_args(args: list[str], inputs: dict[str, Any], steps: list[dict[str, Any]]) -> list[str]:
@@ -66,6 +90,59 @@ def _args_to_dict(args: list[str]) -> dict[str, Any]:
             value = ""
         result[key] = value
     return result
+
+
+def _parse_frontmatter_args(args: list[str]) -> tuple[Path, dict[str, str]]:
+    path_value = ""
+    set_index = None
+    for idx, item in enumerate(args):
+        if item == "path" and idx + 1 < len(args):
+            path_value = args[idx + 1]
+        if item == "set":
+            set_index = idx + 1
+            break
+    if not path_value:
+        raise ValueError("fs_update_frontmatter requires path")
+    updates = {}
+    if set_index is not None:
+        for item in args[set_index:]:
+            if "=" not in item:
+                continue
+            key, value = item.split("=", 1)
+            updates[key] = value
+    return Path(path_value), updates
+
+
+def _parse_frontmatter(content: str) -> tuple[dict[str, str], str]:
+    if not content.startswith("---\n"):
+        return {}, content
+    lines = content.splitlines()
+    end_idx = None
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            end_idx = idx
+            break
+    if end_idx is None:
+        return {}, content
+    meta_lines = lines[1:end_idx]
+    body = "\n".join(lines[end_idx + 1 :])
+    metadata: dict[str, str] = {}
+    for line in meta_lines:
+        if ":" not in line:
+            continue
+        key, raw = line.split(":", 1)
+        metadata[key.strip()] = raw.strip()
+    return metadata, body
+
+
+def _render_frontmatter(metadata: dict[str, str], body: str) -> str:
+    lines = ["---"]
+    for key, value in metadata.items():
+        lines.append(f"{key}: {value}")
+    lines.append("---")
+    lines.append("")
+    lines.append(body)
+    return "\n".join(lines)
 
 
 def _iso_now() -> str:
