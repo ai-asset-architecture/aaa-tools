@@ -3,7 +3,7 @@
     "id": "ops/reindex-all-assets",
     "version": "1.0.0",
     "source": "local",
-    "checksum": "sha256:3f4ad2dc159711727f8dcfa5a22a611e8aa0bf2dc991e50bf0c159e2740fa60b",
+    "checksum": "sha256:ea54a033d446cc0e57b6fbed883353f241fd7c8f645306a494e11ef6601f7905",
     "requires_engine": ">=0.5.0"
   },
   "contract": {
@@ -36,7 +36,7 @@
         "--pattern",
         "*.md",
         "--template",
-        "# Milestones Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "## Milestones Index\n\n| File | Title |\n| --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} |\n{{ end }}",
         "--index-output",
         "index.json",
         "--metadata-field",
@@ -57,6 +57,20 @@
         "**/*.md",
         "--template",
         "# Reports Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    },
+    {
+      "name": "index_tpl_docs_reports_milestones",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-docs/reports/milestones",
+        "--pattern",
+        "*.md",
+        "--template",
+        "## Milestones (Implementation & Verification Reports)\n\n| File | Title |\n| --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} |\n{{ end }}",
         "--index-output",
         "index.json"
       ]
