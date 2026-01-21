@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "id": "ops/complete-milestone",
+    "version": "1.0.0",
+    "source": "local",
+    "checksum": "sha256:dc4931403b5184ce6796d2f6b8cd6f61a41ae95669ffe878cfd6389906d77895",
+    "requires_engine": ">=0.5.0"
+  },
+  "contract": {
+    "inputs": [
+      {
+        "name": "milestone_id",
+        "type": "string"
+      },
+      {
+        "name": "approver",
+        "type": "string"
+      },
+      {
+        "name": "definition_path",
+        "type": "string"
+      }
+    ],
+    "preconditions": [],
+    "outputs": [],
+    "required_scopes": [],
+    "timeout_seconds": 300,
+    "idempotency_check": {
+      "command": "test -f {{inputs.definition_path}}",
+      "expect_exit_code": 0
+    },
+    "error_codes": []
+  },
+  "observability": {
+    "emit_events": true,
+    "audit_artifacts": [],
+    "failure_modes": [],
+    "declared_side_effects": [
+      "generate_completion_report",
+      "update_definition_status",
+      "update_indexes"
+    ]
+  },
+  "steps": [
+    {
+      "name": "run_acceptance_tests",
+      "action": "aaa_evals.run",
+      "args": [
+        "suite",
+        "milestones/{{inputs.milestone_id}}"
+      ]
+    },
+    {
+      "name": "generate_completion_report",
+      "action": "fs_write",
+      "args": [
+        "path",
+        "aaa-tpl-docs/reports/milestones/{{inputs.milestone_id}}_completion.md",
+        "content",
+        "# Completion Report: {{inputs.milestone_id}}\n- Date: {{ now }}\n- Approver: {{ inputs.approver }}\n- Status: PASSED\n- Verification Hash: {{ steps.run_acceptance_tests.output.hash }}\n- Definition Hash: {{ hash_file(inputs.definition_path) }}\n\n## Verification Logs\n{{ steps.run_acceptance_tests.output.logs }}\n"
+      ]
+    },
+    {
+      "name": "mark_as_completed",
+      "action": "fs_update_frontmatter",
+      "args": [
+        "path",
+        "{{inputs.definition_path}}",
+        "set",
+        "status=Completed",
+        "completed_at={{ now }}",
+        "verification_hash={{ steps.run_acceptance_tests.output.hash }}",
+        "definition_hash={{ hash_file(inputs.definition_path) }}"
+      ]
+    },
+    {
+      "name": "update_docs_milestones_index",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-docs/docs/milestones",
+        "--pattern",
+        "*.md",
+        "--template",
+        "## Milestones (Docs)\n\n| File | Title |\n| --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} |\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    },
+    {
+      "name": "update_reports_milestones_index",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-docs/reports/milestones",
+        "--pattern",
+        "*.md",
+        "--template",
+        "## Milestones (Implementation & Verification Reports)\n\n| File | Title |\n| --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} |\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    },
+    {
+      "name": "notify_humans",
+      "action": "notify",
+      "args": [
+        "channel",
+        "milestone",
+        "message",
+        "Milestone {{inputs.milestone_id}} completed. Report: aaa-tpl-docs/reports/milestones/{{inputs.milestone_id}}_completion.md"
+      ]
+    }
+  ]
+}
