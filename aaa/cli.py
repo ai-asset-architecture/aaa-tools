@@ -12,6 +12,7 @@ except Exception:  # pragma: no cover - fallback when typer isn't available
 from . import init_commands
 from . import governance_commands
 from . import runbook_registry
+from . import runbook_runtime
 
 if typer:
     app = typer.Typer(no_args_is_help=True)
@@ -50,6 +51,28 @@ def _version_callback(value: bool):
         raise typer.Exit()
 
 
+def _parse_inputs(values: list[str] | None) -> dict[str, str]:
+    result: dict[str, str] = {}
+    if not values:
+        return result
+    for item in values:
+        if "=" not in item:
+            result[item] = ""
+            continue
+        key, value = item.split("=", 1)
+        result[key] = value
+    return result
+
+
+def run_runbook_impl(spec: str, inputs: list[str] | None = None) -> None:
+    path, payload = runbook_registry.resolve_runbook(spec, REPO_ROOT)
+    runbook_runtime.execute_runbook(payload, _parse_inputs(inputs))
+    if typer:
+        typer.echo(f"runbook executed: {path}")
+    else:
+        print(f"runbook executed: {path}")
+
+
 if typer:
     @app.callback()
     def main(
@@ -71,16 +94,13 @@ if typer:
     governance_typer = typer.Typer(no_args_is_help=True)
 
     @run_typer.command("runbook")
-    def run_runbook(spec: str):
-        """Run a runbook by id@version (stub runtime)."""
+    def run_runbook(spec: str, inputs: list[str] | None = typer.Option(None, "--input")):
+        """Run a runbook by id@version."""
         try:
-            path, payload = runbook_registry.resolve_runbook(spec, REPO_ROOT)
+            run_runbook_impl(spec, inputs)
         except runbook_registry.RunbookError as exc:
             typer.echo(f"runbook error: {exc}")
             raise typer.Exit(code=2)
-        typer.echo(f"runbook resolved: {path}")
-        typer.echo(f"runbook id: {payload.get('metadata', {}).get('id')}")
-        typer.echo(f"runbook version: {payload.get('metadata', {}).get('version')}")
 
     @governance_typer.command("update-index")
     def governance_update_index(
@@ -234,6 +254,7 @@ def _run_fallback() -> int:
     run_sub = run_parser.add_subparsers(dest="run_command")
     runbook_parser = run_sub.add_parser("runbook")
     runbook_parser.add_argument("spec")
+    runbook_parser.add_argument("--input", action="append")
 
     governance_parser = subparsers.add_parser("governance")
     governance_sub = governance_parser.add_subparsers(dest="governance_command")
@@ -355,6 +376,15 @@ def _run_fallback() -> int:
                 dry_run=args.dry_run,
             )
             print(json.dumps(payload, indent=2))
+            return 0
+
+    if args.command == "run":
+        if args.run_command == "runbook":
+            try:
+                run_runbook_impl(args.spec, args.input)
+            except runbook_registry.RunbookError as exc:
+                print(f"runbook error: {exc}")
+                return 2
             return 0
         parser.error("init requires a subcommand")
 
