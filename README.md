@@ -39,7 +39,24 @@ See `aaa-tools/skills/README.md` for the current skill list and naming rules.
 - `aaa-gh-org-audit` - audit GitHub org settings and repo compliance (writes report to `aaa-tpl-docs/reports/`).
 
 ## Install & Update
-TBD. Target state: `aaa` installed via a versioned package or a pinned binary. Until then, run from source after cloning this repo.
+Recommended install is pinned to a released tag.
+
+```bash
+# Ensure git uses your GitHub CLI credentials (required for private repos)
+gh auth setup-git
+
+# Install a pinned version
+python3 -m pip install "git+https://github.com/ai-asset-architecture/aaa-tools.git@v0.2.0"
+
+# Verify
+aaa --version
+```
+
+Update to a newer version by re-running the install command with a newer tag:
+
+```bash
+python3 -m pip install --upgrade "git+https://github.com/ai-asset-architecture/aaa-tools.git@v0.2.0"
+```
 
 ## CLI 背景與使用說明
 See `aaa-tools/specs/aaa CLI 背景與使用說明.md`.
