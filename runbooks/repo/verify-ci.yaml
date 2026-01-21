@@ -1,0 +1,41 @@
+{
+  "contract": {
+    "error_codes": [],
+    "idempotency_check": {
+      "command": "gh run list --repo {{inputs.org}}/{{inputs.repo}}",
+      "expect_exit_code": 0
+    },
+    "inputs": [],
+    "outputs": [],
+    "preconditions": [],
+    "required_scopes": [
+      "repo:read"
+    ],
+    "timeout_seconds": 300
+  },
+  "metadata": {
+    "checksum": "sha256:46058f3a09ebe1952b451c5ee450a8407ad17757a6fed7ff2707a7632412cbb3",
+    "id": "repo/verify-ci",
+    "requires_engine": ">=0.5.0",
+    "source": "local",
+    "version": "1.0.0"
+  },
+  "observability": {
+    "audit_artifacts": [],
+    "declared_side_effects": [
+      "read_ci_status"
+    ],
+    "emit_events": true,
+    "failure_modes": []
+  },
+  "steps": [
+    {
+      "action": "gh_cli",
+      "args": [
+        "run",
+        "list"
+      ],
+      "name": "verify_checks"
+    }
+  ]
+}

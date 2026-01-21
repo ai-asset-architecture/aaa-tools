@@ -1,0 +1,41 @@
+{
+  "contract": {
+    "error_codes": [],
+    "idempotency_check": {
+      "command": "aaa init repo-checks --org {{inputs.org}} --from-plan {{inputs.plan}} --suite governance",
+      "expect_exit_code": 0
+    },
+    "inputs": [],
+    "outputs": [],
+    "preconditions": [],
+    "required_scopes": [
+      "repo:read"
+    ],
+    "timeout_seconds": 300
+  },
+  "metadata": {
+    "checksum": "sha256:86f833cca0beb7faaad892b6ab91eb8c88dc52753064c9ba47c817e4570ecaa4",
+    "id": "repo/repo-checks",
+    "requires_engine": ">=0.5.0",
+    "source": "local",
+    "version": "1.0.0"
+  },
+  "observability": {
+    "audit_artifacts": [],
+    "declared_side_effects": [
+      "read_repo_state"
+    ],
+    "emit_events": true,
+    "failure_modes": []
+  },
+  "steps": [
+    {
+      "action": "aaa_cli",
+      "args": [
+        "init",
+        "repo-checks"
+      ],
+      "name": "governance_checks"
+    }
+  ]
+}

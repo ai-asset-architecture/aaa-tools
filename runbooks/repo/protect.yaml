@@ -1,0 +1,40 @@
+{
+  "contract": {
+    "error_codes": [],
+    "idempotency_check": {
+      "command": "gh api repos/{{inputs.org}}/{{inputs.repo}}/branches/{{inputs.branch}}/protection",
+      "expect_exit_code": 0
+    },
+    "inputs": [],
+    "outputs": [],
+    "preconditions": [],
+    "required_scopes": [
+      "repo:write"
+    ],
+    "timeout_seconds": 120
+  },
+  "metadata": {
+    "checksum": "sha256:5987291ccdb82a88d58d50e5a251711950317b50a306cb931e446c298a625c71",
+    "id": "repo/protect",
+    "requires_engine": ">=0.5.0",
+    "source": "local",
+    "version": "1.0.0"
+  },
+  "observability": {
+    "audit_artifacts": [],
+    "declared_side_effects": [
+      "modify_branch_protection"
+    ],
+    "emit_events": true,
+    "failure_modes": []
+  },
+  "steps": [
+    {
+      "action": "gh_api",
+      "args": [
+        "repos/{org}/{repo}/branches/{branch}/protection"
+      ],
+      "name": "apply_protection"
+    }
+  ]
+}
