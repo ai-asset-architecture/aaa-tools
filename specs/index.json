@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-21T17:12:54Z",
+  "generated_at": "2026-01-21T18:08:44Z",
   "source_dir": "/Users/imac/Documents/Code/AI-Lotto/AAA_WORKSPACE/aaa-tools/specs",
   "hash_algo": "sha256",
   "files": [
@@ -7,6 +7,13 @@
       "path": "CLI_CONTRACT.md",
       "title": "CLI_CONTRACT.md \u2014 AAA Tools CLI Contract (v0.1)",
       "hash": "f86879a1faa82e0b8e8a3e307c5605a192c6488bc81d1c713ff706594fc38c56",
+      "last_modified": "2026-01-21",
+      "metadata": {}
+    },
+    {
+      "path": "README.md",
+      "title": "Specs Index\\n\\n- CLI_CONTRACT.md | CLI_CONTRACT.md \u2014 AAA Tools CLI Contract (v0.1)\\n- aaa CLI \u80cc\u666f\u8207\u4f7f\u7528\u8aaa\u660e.md | aaa CLI \u80cc\u666f\u8207\u4f7f\u7528\u8aaa\u660e\\n- skill-architecture-v0.2.md | Skill Architecture v0.2 (Decision-Tree Driven)\\n",
+      "hash": "31f10c5b047c86c549ec243e696bff132120b72b6b42419c89f8e90bbe5fb87a",
       "last_modified": "2026-01-21",
       "metadata": {}
     },
@@ -22,6 +29,13 @@
       "title": "Skill Architecture v0.2 (Decision-Tree Driven)",
       "hash": "3963247e24d7802af98164a392856c6edd7c53cfb500d274ea17393a5c654116",
       "last_modified": "2026-01-19",
+      "metadata": {}
+    },
+    {
+      "path": "v0.5-closing-protocol.md",
+      "title": "v0.5 Closing Protocol (Complete-Milestone)",
+      "hash": "5acb2e7c493701318a3cd3d32e0765418d89c45c98e762f75d418872df562d81",
+      "last_modified": "2026-01-21",
       "metadata": {}
     }
   ]
