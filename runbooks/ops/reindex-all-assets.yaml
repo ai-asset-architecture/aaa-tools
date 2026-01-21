@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "id": "ops/reindex-all-assets",
+    "version": "1.0.0",
+    "source": "local",
+    "checksum": "sha256:3f4ad2dc159711727f8dcfa5a22a611e8aa0bf2dc991e50bf0c159e2740fa60b",
+    "requires_engine": ">=0.5.0"
+  },
+  "contract": {
+    "inputs": [],
+    "preconditions": [],
+    "outputs": [],
+    "required_scopes": [],
+    "timeout_seconds": 300,
+    "idempotency_check": {
+      "command": "test -d .",
+      "expect_exit_code": 0
+    },
+    "error_codes": []
+  },
+  "observability": {
+    "emit_events": true,
+    "audit_artifacts": [],
+    "failure_modes": [],
+    "declared_side_effects": [
+      "update_indexes"
+    ]
+  },
+  "steps": [
+    {
+      "name": "index_tpl_docs_milestones",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-docs/milestones",
+        "--pattern",
+        "*.md",
+        "--template",
+        "# Milestones Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "--index-output",
+        "index.json",
+        "--metadata-field",
+        "status",
+        "--metadata-field",
+        "owner",
+        "--metadata-field",
+        "date"
+      ]
+    },
+    {
+      "name": "index_tpl_docs_reports",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-docs/reports",
+        "--pattern",
+        "**/*.md",
+        "--template",
+        "# Reports Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    },
+    {
+      "name": "index_tpl_docs_docs",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-docs/docs",
+        "--pattern",
+        "**/*.md",
+        "--template",
+        "# Docs Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    },
+    {
+      "name": "index_tools_specs",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tools/specs",
+        "--pattern",
+        "*.md",
+        "--template",
+        "# Specs Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    },
+    {
+      "name": "index_tpl_frontend_docs",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-frontend/docs",
+        "--pattern",
+        "**/*.md",
+        "--template",
+        "# Frontend Docs Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    },
+    {
+      "name": "index_tpl_service_docs",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-service/docs",
+        "--pattern",
+        "**/*.md",
+        "--template",
+        "# Service Docs Index\n\n{{ range files }}- {{ .Path }} | {{ .Title }}\n{{ end }}",
+        "--index-output",
+        "index.json"
+      ]
+    }
+  ]
+}
