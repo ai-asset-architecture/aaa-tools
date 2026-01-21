@@ -9,6 +9,7 @@ except Exception:  # pragma: no cover - fallback when typer isn't available
     typer = None
 
 from . import init_commands
+from . import runbook_registry
 
 if typer:
     app = typer.Typer(no_args_is_help=True)
@@ -63,6 +64,22 @@ if typer:
         typer.echo("aaa-tools 0.1.0")
 
 
+if typer:
+    run_typer = typer.Typer(no_args_is_help=True)
+
+    @run_typer.command("runbook")
+    def run_runbook(spec: str):
+        """Run a runbook by id@version (stub runtime)."""
+        try:
+            path, payload = runbook_registry.resolve_runbook(spec, REPO_ROOT)
+        except runbook_registry.RunbookError as exc:
+            typer.echo(f"runbook error: {exc}")
+            raise typer.Exit(code=2)
+        typer.echo(f"runbook resolved: {path}")
+        typer.echo(f"runbook id: {payload.get('metadata', {}).get('id')}")
+        typer.echo(f"runbook version: {payload.get('metadata', {}).get('version')}")
+
+
 def sync_skills(target: str = "codex"):
     """Sync skills to the specified target."""
     if target not in {"codex", "agent"}:
@@ -110,6 +127,7 @@ if typer:
     sync_typer.command("workflows")(sync_workflows)
     app.add_typer(sync_typer, name="sync")
     app.add_typer(init_commands.init_app, name="init")
+    app.add_typer(run_typer, name="run")
 
 
 def _run_fallback() -> int:
@@ -181,6 +199,11 @@ def _run_fallback() -> int:
     repo_checks_parser.add_argument("--jsonl", action="store_true")
     repo_checks_parser.add_argument("--log-dir")
     repo_checks_parser.add_argument("--dry-run", action="store_true")
+
+    run_parser = subparsers.add_parser("run")
+    run_sub = run_parser.add_subparsers(dest="run_command")
+    runbook_parser = run_sub.add_parser("runbook")
+    runbook_parser.add_argument("spec")
 
     args = parser.parse_args()
     if args.version:
@@ -271,6 +294,19 @@ def _run_fallback() -> int:
             )
             return 0
         parser.error("init requires a subcommand")
+
+    if args.command == "run":
+        if args.run_command == "runbook":
+            try:
+                path, payload = runbook_registry.resolve_runbook(args.spec, REPO_ROOT)
+            except runbook_registry.RunbookError as exc:
+                print(f"runbook error: {exc}")
+                return 2
+            print(f"runbook resolved: {path}")
+            print(f"runbook id: {payload.get('metadata', {}).get('id')}")
+            print(f"runbook version: {payload.get('metadata', {}).get('version')}")
+            return 0
+        parser.error("run requires a subcommand")
 
     parser.print_help()
     return 1
