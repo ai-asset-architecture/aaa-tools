@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-22T19:01:33Z",
+  "generated_at": "2026-01-22T19:08:08Z",
   "source_dir": "aaa-tools/specs",
   "hash_algo": "sha256",
   "files": [
@@ -12,9 +12,9 @@
     },
     {
       "path": "README.md",
-      "title": "README",
-      "hash": "242f89cba695d44e606a8d7c1d8e90f62a54f25d3a65c71c7cb30e42335d3bde",
-      "last_modified": "2026-01-21",
+      "title": "Specs Index",
+      "hash": "b556e933de387c1c9a58ba27da52fe4a65ab9cf6ac3e62098bb4713dfbb05660",
+      "last_modified": "2026-01-22",
       "metadata": {}
     },
     {
