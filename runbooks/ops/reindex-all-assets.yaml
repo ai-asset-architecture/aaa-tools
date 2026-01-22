@@ -3,14 +3,16 @@
     "id": "ops/reindex-all-assets",
     "version": "1.0.0",
     "source": "local",
-    "checksum": "sha256:ea54a033d446cc0e57b6fbed883353f241fd7c8f645306a494e11ef6601f7905",
+    "checksum": "sha256:95b984cf98e1beeebaf538cc1637dff3e289e4da96cf18887842e981ba3d61da",
     "requires_engine": ">=0.5.0"
   },
   "contract": {
     "inputs": [],
     "preconditions": [],
     "outputs": [],
-    "required_scopes": [],
+    "required_scopes": [
+      "gov:index"
+    ],
     "timeout_seconds": 300,
     "idempotency_check": {
       "command": "test -d .",

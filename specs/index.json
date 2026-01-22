@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-01-21T18:08:44Z",
-  "source_dir": "/Users/imac/Documents/Code/AI-Lotto/AAA_WORKSPACE/aaa-tools/specs",
+  "generated_at": "2026-01-22T19:01:33Z",
+  "source_dir": "aaa-tools/specs",
   "hash_algo": "sha256",
   "files": [
     {
       "path": "CLI_CONTRACT.md",
       "title": "CLI_CONTRACT.md \u2014 AAA Tools CLI Contract (v0.1)",
-      "hash": "f86879a1faa82e0b8e8a3e307c5605a192c6488bc81d1c713ff706594fc38c56",
-      "last_modified": "2026-01-21",
+      "hash": "f5be4fef09e80d2277ae61e1ff127897067eb0859491b1c8c9a53a55f091f5df",
+      "last_modified": "2026-01-22",
       "metadata": {}
     },
     {
       "path": "README.md",
-      "title": "Specs Index\\n\\n- CLI_CONTRACT.md | CLI_CONTRACT.md \u2014 AAA Tools CLI Contract (v0.1)\\n- aaa CLI \u80cc\u666f\u8207\u4f7f\u7528\u8aaa\u660e.md | aaa CLI \u80cc\u666f\u8207\u4f7f\u7528\u8aaa\u660e\\n- skill-architecture-v0.2.md | Skill Architecture v0.2 (Decision-Tree Driven)\\n",
-      "hash": "31f10c5b047c86c549ec243e696bff132120b72b6b42419c89f8e90bbe5fb87a",
+      "title": "README",
+      "hash": "242f89cba695d44e606a8d7c1d8e90f62a54f25d3a65c71c7cb30e42335d3bde",
       "last_modified": "2026-01-21",
       "metadata": {}
     },
