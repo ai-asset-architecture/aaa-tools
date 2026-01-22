@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "id": "security/attack-scope",
+    "version": "1.0.0",
+    "source": "local",
+    "checksum": "sha256:61cf56b16efd5876c407feb683f98e04aea48f1fb2dea48668f24397029ac00b"
+  },
+  "contract": {
+    "inputs": [],
+    "required_scopes": [
+      "notify:send"
+    ]
+  },
+  "steps": [
+    {
+      "name": "try-write",
+      "action": "fs_write",
+      "args": {
+        "path": "tests/_tmp_fs/attack.txt",
+        "content": "x"
+      }
+    }
+  ]
+}

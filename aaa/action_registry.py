@@ -2,6 +2,14 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 
+class RuntimeSecurityError(Exception):
+    def __init__(self, code: str, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.details = details or {}
+
+
 @dataclass(frozen=True)
 class ActionSpec:
     name: str
@@ -23,5 +31,9 @@ class ActionRegistry:
         if allowed_scopes is not None:
             missing = [scope for scope in spec.scopes if scope not in allowed_scopes]
             if missing:
-                raise PermissionError(f"missing scopes: {', '.join(missing)}")
+                raise RuntimeSecurityError(
+                    "SCOPE_VIOLATION",
+                    f"missing scopes: {', '.join(missing)}",
+                    {"missing": missing, "allowed": allowed_scopes},
+                )
         return spec.handler(args)

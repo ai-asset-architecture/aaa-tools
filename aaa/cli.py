@@ -13,6 +13,7 @@ from . import init_commands
 from . import governance_commands
 from . import runbook_registry
 from . import runbook_runtime
+from .action_registry import RuntimeSecurityError
 
 if typer:
     app = typer.Typer(no_args_is_help=True)
@@ -64,13 +65,40 @@ def _parse_inputs(values: list[str] | None) -> dict[str, str]:
     return result
 
 
-def run_runbook_impl(spec: str, inputs: list[str] | None = None) -> None:
-    path, payload = runbook_registry.resolve_runbook(spec, REPO_ROOT)
-    runbook_runtime.execute_runbook(payload, _parse_inputs(inputs))
-    if typer:
-        typer.echo(f"runbook executed: {path}")
+def run_runbook_impl(spec: str, inputs: list[str] | None = None, json_output: bool = False) -> int:
+    try:
+        path, payload = runbook_registry.resolve_runbook(spec, REPO_ROOT)
+        result = runbook_runtime.execute_runbook(payload, _parse_inputs(inputs))
+        response = {"status": "ok", "result": result}
+        exit_code = 0
+    except RuntimeSecurityError as exc:
+        response = {"status": "error", "error_code": exc.code, "message": exc.message, "details": exc.details}
+        exit_code = 2
+        path = None
+    except Exception as exc:
+        response = {"status": "error", "error_code": "RUNTIME_ERROR", "message": str(exc), "details": {}}
+        exit_code = 1
+        path = None
+
+    if json_output:
+        output = json.dumps(response, ensure_ascii=True)
+        if typer:
+            typer.echo(output)
+        else:
+            print(output)
     else:
-        print(f"runbook executed: {path}")
+        if path is not None:
+            if typer:
+                typer.echo(f"runbook executed: {path}")
+            else:
+                print(f"runbook executed: {path}")
+        else:
+            message = response.get("message", "")
+            if typer:
+                typer.echo(f"runbook error: {message}")
+            else:
+                print(f"runbook error: {message}")
+    return exit_code
 
 
 if typer:
@@ -94,13 +122,27 @@ if typer:
     governance_typer = typer.Typer(no_args_is_help=True)
 
     @run_typer.command("runbook")
-    def run_runbook(spec: str, inputs: list[str] | None = typer.Option(None, "--input")):
+    def run_runbook(
+        spec: str,
+        inputs: list[str] | None = typer.Option(None, "--input"),
+        json_output: bool = typer.Option(False, "--json", help="Output JSON result"),
+    ):
         """Run a runbook by id@version."""
         try:
-            run_runbook_impl(spec, inputs)
+            exit_code = run_runbook_impl(spec, inputs, json_output=json_output)
         except runbook_registry.RunbookError as exc:
-            typer.echo(f"runbook error: {exc}")
+            if json_output:
+                typer.echo(
+                    json.dumps(
+                        {"status": "error", "error_code": "RUNBOOK_ERROR", "message": str(exc), "details": {}},
+                        ensure_ascii=True,
+                    )
+                )
+            else:
+                typer.echo(f"runbook error: {exc}")
             raise typer.Exit(code=2)
+        if exit_code:
+            raise typer.Exit(code=exit_code)
 
     @governance_typer.command("update-index")
     def governance_update_index(
@@ -255,6 +297,7 @@ def _run_fallback() -> int:
     runbook_parser = run_sub.add_parser("runbook")
     runbook_parser.add_argument("spec")
     runbook_parser.add_argument("--input", action="append")
+    runbook_parser.add_argument("--json", action="store_true")
 
     governance_parser = subparsers.add_parser("governance")
     governance_sub = governance_parser.add_subparsers(dest="governance_command")
@@ -381,11 +424,19 @@ def _run_fallback() -> int:
     if args.command == "run":
         if args.run_command == "runbook":
             try:
-                run_runbook_impl(args.spec, args.input)
+                exit_code = run_runbook_impl(args.spec, args.input, json_output=args.json)
             except runbook_registry.RunbookError as exc:
-                print(f"runbook error: {exc}")
+                if args.json:
+                    print(
+                        json.dumps(
+                            {"status": "error", "error_code": "RUNBOOK_ERROR", "message": str(exc), "details": {}},
+                            ensure_ascii=True,
+                        )
+                    )
+                else:
+                    print(f"runbook error: {exc}")
                 return 2
-            return 0
+            return exit_code
         parser.error("init requires a subcommand")
 
     if args.command == "run":
