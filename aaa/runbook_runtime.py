@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from . import governance_index
-from .action_registry import ActionRegistry
+from .action_registry import ActionRegistry, RuntimeSecurityError
 
 
 def execute_runbook(
@@ -51,7 +51,7 @@ def _notify_stdout(args: Any) -> dict[str, Any]:
 
 def _fs_write(args: Any) -> dict[str, Any]:
     payload = _payload_from_args(args)
-    path = Path(payload.get("path", ""))
+    path = _resolve_safe_path(payload.get("path", ""))
     content = payload.get("content", "")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
@@ -113,6 +113,24 @@ def _render_template(value: str, inputs: dict[str, Any], steps: list[dict[str, A
         return ""
 
     return re.sub(r"\{\{\s*([^}]+)\s*\}\}", replace, value)
+
+
+def _resolve_safe_path(path_value: str | Path) -> Path:
+    if not path_value:
+        raise RuntimeSecurityError("PATH_TRAVERSAL", "empty path not allowed")
+    base = Path.cwd().resolve()
+    raw = Path(path_value).expanduser()
+    target = raw if raw.is_absolute() else (base / raw)
+    target = target.resolve()
+    try:
+        target.relative_to(base)
+    except ValueError as exc:
+        raise RuntimeSecurityError(
+            "PATH_TRAVERSAL",
+            "path escapes repo root",
+            {"base": str(base), "path": str(target)},
+        ) from exc
+    return target
 
 
 def _payload_from_args(args: Any) -> dict[str, Any]:

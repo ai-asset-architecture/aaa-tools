@@ -1,7 +1,9 @@
+import os
 import unittest
 from pathlib import Path
 
 from aaa import runbook_runtime
+from aaa.action_registry import RuntimeSecurityError
 
 
 class TestRunbookActionsFs(unittest.TestCase):
@@ -54,6 +56,47 @@ class TestRunbookActionsFs(unittest.TestCase):
         updated = md_path.read_text(encoding="utf-8")
         self.assertIn("status: Completed", updated)
         self.assertIn("completed_at: 2026-01-22", updated)
+
+    def test_fs_write_blocks_path_traversal(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        escape_path = repo_root.parent / "escape.txt"
+        if escape_path.exists():
+            escape_path.unlink()
+
+        runbook = {
+            "metadata": {"id": "ops/test", "version": "1.0.0"},
+            "contract": {
+                "inputs": [],
+                "preconditions": [],
+                "outputs": [],
+                "required_scopes": ["fs:write"],
+                "timeout_seconds": 30,
+                "idempotency_check": {"command": "true", "expect_exit_code": 0},
+                "error_codes": [],
+            },
+            "observability": {
+                "emit_events": True,
+                "audit_artifacts": [],
+                "failure_modes": [],
+                "declared_side_effects": [],
+            },
+            "steps": [
+                {
+                    "name": "escape",
+                    "action": "fs_write",
+                    "args": ["path", str(escape_path), "content", "x"],
+                }
+            ],
+        }
+
+        cwd = Path.cwd()
+        os.chdir(repo_root)
+        try:
+            with self.assertRaises(RuntimeSecurityError) as ctx:
+                runbook_runtime.execute_runbook(runbook, inputs={})
+            self.assertEqual(ctx.exception.code, "PATH_TRAVERSAL")
+        finally:
+            os.chdir(cwd)
 
 
 if __name__ == "__main__":
