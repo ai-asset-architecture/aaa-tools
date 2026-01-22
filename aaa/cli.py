@@ -2,6 +2,7 @@ import argparse
 import json
 import shutil
 import sys
+from importlib import metadata
 from pathlib import Path
 
 try:
@@ -48,7 +49,7 @@ def _sync_sources(sources, dest_root: Path):
 
 def _version_callback(value: bool):
     if value:
-        typer.echo("aaa-tools 0.1.0")
+        typer.echo(f"aaa-tools {metadata.version('aaa-tools')}")
         raise typer.Exit()
 
 
@@ -129,7 +130,7 @@ if typer:
     @app.command()
     def version():
         """Show version."""
-        typer.echo("aaa-tools 0.1.0")
+        typer.echo(f"aaa-tools {metadata.version('aaa-tools')}")
 
 
 if typer:
