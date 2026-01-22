@@ -65,12 +65,27 @@ def _parse_inputs(values: list[str] | None) -> dict[str, str]:
     return result
 
 
-def run_runbook_impl(spec: str, inputs: list[str] | None = None, json_output: bool = False) -> int:
+def run_runbook_impl(
+    spec: str | None,
+    inputs: list[str] | None = None,
+    json_output: bool = False,
+    runbook_file: str | None = None,
+) -> int:
     try:
-        path, payload = runbook_registry.resolve_runbook(spec, REPO_ROOT)
+        if runbook_file:
+            path = Path(runbook_file)
+            payload = runbook_registry.load_runbook_file(path)
+        else:
+            if not spec:
+                raise runbook_registry.RunbookError("runbook spec is required")
+            path, payload = runbook_registry.resolve_runbook(spec, REPO_ROOT)
         result = runbook_runtime.execute_runbook(payload, _parse_inputs(inputs))
         response = {"status": "ok", "result": result}
         exit_code = 0
+    except runbook_registry.RunbookError as exc:
+        response = {"status": "error", "error_code": "RUNBOOK_ERROR", "message": str(exc), "details": {}}
+        exit_code = 2
+        path = None
     except RuntimeSecurityError as exc:
         response = {"status": "error", "error_code": exc.code, "message": exc.message, "details": exc.details}
         exit_code = 2
@@ -123,24 +138,18 @@ if typer:
 
     @run_typer.command("runbook")
     def run_runbook(
-        spec: str,
+        spec: str | None = typer.Argument(None),
         inputs: list[str] | None = typer.Option(None, "--input"),
         json_output: bool = typer.Option(False, "--json", help="Output JSON result"),
+        runbook_file: Path | None = typer.Option(None, "--runbook-file", help="Runbook JSON file"),
     ):
         """Run a runbook by id@version."""
-        try:
-            exit_code = run_runbook_impl(spec, inputs, json_output=json_output)
-        except runbook_registry.RunbookError as exc:
-            if json_output:
-                typer.echo(
-                    json.dumps(
-                        {"status": "error", "error_code": "RUNBOOK_ERROR", "message": str(exc), "details": {}},
-                        ensure_ascii=True,
-                    )
-                )
-            else:
-                typer.echo(f"runbook error: {exc}")
-            raise typer.Exit(code=2)
+        exit_code = run_runbook_impl(
+            spec,
+            inputs,
+            json_output=json_output,
+            runbook_file=str(runbook_file) if runbook_file else None,
+        )
         if exit_code:
             raise typer.Exit(code=exit_code)
 
@@ -295,9 +304,10 @@ def _run_fallback() -> int:
     run_parser = subparsers.add_parser("run")
     run_sub = run_parser.add_subparsers(dest="run_command")
     runbook_parser = run_sub.add_parser("runbook")
-    runbook_parser.add_argument("spec")
+    runbook_parser.add_argument("spec", nargs="?")
     runbook_parser.add_argument("--input", action="append")
     runbook_parser.add_argument("--json", action="store_true")
+    runbook_parser.add_argument("--runbook-file")
 
     governance_parser = subparsers.add_parser("governance")
     governance_sub = governance_parser.add_subparsers(dest="governance_command")
@@ -423,19 +433,12 @@ def _run_fallback() -> int:
 
     if args.command == "run":
         if args.run_command == "runbook":
-            try:
-                exit_code = run_runbook_impl(args.spec, args.input, json_output=args.json)
-            except runbook_registry.RunbookError as exc:
-                if args.json:
-                    print(
-                        json.dumps(
-                            {"status": "error", "error_code": "RUNBOOK_ERROR", "message": str(exc), "details": {}},
-                            ensure_ascii=True,
-                        )
-                    )
-                else:
-                    print(f"runbook error: {exc}")
-                return 2
+            exit_code = run_runbook_impl(
+                args.spec,
+                args.input,
+                json_output=args.json,
+                runbook_file=args.runbook_file,
+            )
             return exit_code
         parser.error("init requires a subcommand")
 

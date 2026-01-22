@@ -27,6 +27,28 @@ class RunbookCliJsonTests(unittest.TestCase):
         self.assertEqual(data["status"], "error")
         self.assertEqual(data["error_code"], "SCOPE_VIOLATION")
 
+    def test_runbook_cli_json_error_output_from_file(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "aaa.cli",
+                "run",
+                "runbook",
+                "--runbook-file",
+                "runbooks/security/attack-scope.yaml",
+                "--json",
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        data = json.loads(result.stdout)
+        self.assertEqual(data["status"], "error")
+        self.assertEqual(data["error_code"], "SCOPE_VIOLATION")
+
 
 if __name__ == "__main__":
     unittest.main()

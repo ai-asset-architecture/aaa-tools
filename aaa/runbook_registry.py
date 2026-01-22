@@ -59,3 +59,20 @@ def resolve_runbook(spec: str, repo_root: Path) -> Tuple[Path, Dict]:
         raise RunbookError("runbook checksum mismatch")
 
     return path, payload
+
+
+def load_runbook_file(path: Path) -> Dict:
+    if not path.is_file():
+        raise RunbookError(f"runbook not found: {path}")
+
+    payload = _load_runbook(path)
+    metadata = payload.get("metadata", {})
+    expected_checksum = metadata.get("checksum")
+    if not expected_checksum:
+        raise RunbookError("runbook checksum missing")
+
+    actual_checksum = _compute_checksum(payload)
+    if actual_checksum != expected_checksum:
+        raise RunbookError("runbook checksum mismatch")
+
+    return payload
