@@ -6,34 +6,36 @@ from pathlib import Path
 from typing import Any
 
 from . import governance_index
+from .action_registry import ActionRegistry
 
 
-def execute_runbook(runbook: dict[str, Any], inputs: dict[str, Any]) -> dict[str, Any]:
+def execute_runbook(
+    runbook: dict[str, Any],
+    inputs: dict[str, Any],
+    registry: ActionRegistry | None = None,
+) -> dict[str, Any]:
+    registry = registry or _default_registry()
+    allowed_scopes = runbook.get("contract", {}).get("required_scopes")
     steps_output = []
     for step in runbook.get("steps", []):
         rendered_args = _render_args(step.get("args", []), inputs, steps_output)
-        output = _dispatch_action(step.get("action", ""), rendered_args)
+        output = registry.execute(step.get("action", ""), rendered_args, allowed_scopes)
         steps_output.append({"name": step.get("name", ""), "output": output})
     return {"steps": steps_output}
 
 
-def _dispatch_action(action: str, args: list[str]) -> dict[str, Any]:
-    if action == "notify":
-        payload = _notify_stdout(args)
-        return {"payload": payload}
-    if action == "fs_write":
-        return _fs_write(args)
-    if action == "fs_update_frontmatter":
-        return _fs_update_frontmatter(args)
-    if action == "governance.update_index":
-        return _governance_update_index(args)
-    if action == "aaa_evals.run":
-        return _aaa_evals_run(args)
-    raise ValueError(f"unsupported action: {action}")
+def _default_registry() -> ActionRegistry:
+    registry = ActionRegistry()
+    registry.register("notify", _notify_stdout, scopes=["notify:send"])
+    registry.register("fs_write", _fs_write, scopes=["fs:write"])
+    registry.register("fs_update_frontmatter", _fs_update_frontmatter, scopes=["fs:write"])
+    registry.register("governance.update_index", _governance_update_index, scopes=["gov:index"])
+    registry.register("aaa_evals.run", _aaa_evals_run, scopes=["eval:run"])
+    return registry
 
 
-def _notify_stdout(args: list[str]) -> dict[str, Any]:
-    payload = _args_to_dict(args)
+def _notify_stdout(args: Any) -> dict[str, Any]:
+    payload = _payload_from_args(args)
     message = payload.get("message", "")
     structured = {
         "level": "INFO",
@@ -47,8 +49,8 @@ def _notify_stdout(args: list[str]) -> dict[str, Any]:
     return structured
 
 
-def _fs_write(args: list[str]) -> dict[str, Any]:
-    payload = _args_to_dict(args)
+def _fs_write(args: Any) -> dict[str, Any]:
+    payload = _payload_from_args(args)
     path = Path(payload.get("path", ""))
     content = payload.get("content", "")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +58,7 @@ def _fs_write(args: list[str]) -> dict[str, Any]:
     return {"path": str(path)}
 
 
-def _fs_update_frontmatter(args: list[str]) -> dict[str, Any]:
+def _fs_update_frontmatter(args: Any) -> dict[str, Any]:
     path, updates = _parse_frontmatter_args(args)
     content = path.read_text(encoding="utf-8")
     metadata, body = _parse_frontmatter(content)
@@ -66,7 +68,7 @@ def _fs_update_frontmatter(args: list[str]) -> dict[str, Any]:
     return {"path": str(path), "updated_keys": sorted(updates.keys())}
 
 
-def _governance_update_index(args: list[str]) -> dict[str, Any]:
+def _governance_update_index(args: Any) -> dict[str, Any]:
     options = _parse_flag_args(args)
     payload = governance_index.update_index(
         target_dir=options.get("target-dir", ""),
@@ -78,22 +80,28 @@ def _governance_update_index(args: list[str]) -> dict[str, Any]:
     return {"payload": payload}
 
 
-def _aaa_evals_run(args: list[str]) -> dict[str, Any]:
-    payload = _args_to_dict(args)
+def _aaa_evals_run(args: Any) -> dict[str, Any]:
+    payload = _payload_from_args(args)
     suite = payload.get("suite", "")
     command = ["python3", "-m", "aaa.cli", "eval", suite]
     result = subprocess.run(command, capture_output=True, text=True, check=False)
     return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
 
 
-def _render_args(args: list[str], inputs: dict[str, Any], steps: list[dict[str, Any]]) -> list[str]:
-    rendered = []
-    for item in args:
-        if not isinstance(item, str):
-            rendered.append(item)
-            continue
-        rendered.append(_render_template(item, inputs, steps))
-    return rendered
+def _render_args(args: Any, inputs: dict[str, Any], steps: list[dict[str, Any]]) -> Any:
+    if isinstance(args, dict):
+        return {key: _render_value(value, inputs, steps) for key, value in args.items()}
+    if isinstance(args, list):
+        return [_render_value(item, inputs, steps) for item in args]
+    return args
+
+
+def _render_value(value: Any, inputs: dict[str, Any], steps: list[dict[str, Any]]) -> Any:
+    if isinstance(value, str):
+        return _render_template(value, inputs, steps)
+    if isinstance(value, list):
+        return [_render_value(item, inputs, steps) for item in value]
+    return value
 
 
 def _render_template(value: str, inputs: dict[str, Any], steps: list[dict[str, Any]]) -> str:
@@ -105,6 +113,14 @@ def _render_template(value: str, inputs: dict[str, Any], steps: list[dict[str, A
         return ""
 
     return re.sub(r"\{\{\s*([^}]+)\s*\}\}", replace, value)
+
+
+def _payload_from_args(args: Any) -> dict[str, Any]:
+    if isinstance(args, dict):
+        return args
+    if isinstance(args, list):
+        return _args_to_dict(args)
+    return {}
 
 
 def _args_to_dict(args: list[str]) -> dict[str, Any]:
@@ -119,7 +135,11 @@ def _args_to_dict(args: list[str]) -> dict[str, Any]:
     return result
 
 
-def _parse_flag_args(args: list[str]) -> dict[str, Any]:
+def _parse_flag_args(args: Any) -> dict[str, Any]:
+    if isinstance(args, dict):
+        return args
+    if not isinstance(args, list):
+        return {}
     result: dict[str, Any] = {}
     it = iter(range(len(args)))
     idx = 0
@@ -140,7 +160,24 @@ def _parse_flag_args(args: list[str]) -> dict[str, Any]:
     return result
 
 
-def _parse_frontmatter_args(args: list[str]) -> tuple[Path, dict[str, str]]:
+def _parse_frontmatter_args(args: Any) -> tuple[Path, dict[str, str]]:
+    if isinstance(args, dict):
+        path_value = args.get("path", "")
+        updates: dict[str, str] = {}
+        raw_updates = args.get("set", {})
+        if isinstance(raw_updates, dict):
+            updates = {key: str(value) for key, value in raw_updates.items()}
+        elif isinstance(raw_updates, list):
+            for item in raw_updates:
+                if isinstance(item, str) and "=" in item:
+                    key, value = item.split("=", 1)
+                    updates[key] = value
+        elif isinstance(raw_updates, str) and "=" in raw_updates:
+            key, value = raw_updates.split("=", 1)
+            updates[key] = value
+        if not path_value:
+            raise ValueError("fs_update_frontmatter requires path")
+        return Path(path_value), updates
     path_value = ""
     set_index = None
     for idx, item in enumerate(args):

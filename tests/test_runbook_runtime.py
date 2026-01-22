@@ -14,7 +14,7 @@ class TestRunbookRuntime(unittest.TestCase):
                 "inputs": [],
                 "preconditions": [],
                 "outputs": [],
-                "required_scopes": [],
+                "required_scopes": ["notify:send"],
                 "timeout_seconds": 30,
                 "idempotency_check": {"command": "true", "expect_exit_code": 0},
                 "error_codes": [],
