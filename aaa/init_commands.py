@@ -945,13 +945,52 @@ def apply_templates(
 
         status_result = _run_command(["git", "status", "--porcelain"], cwd=target_dir)
         if not status_result.stdout.strip():
+            commit_result = _run_command(
+                [
+                    "git",
+                    "commit",
+                    "--allow-empty",
+                    "-m",
+                    f"chore: apply aaa template {template}@{aaa_tag} (noop)",
+                ],
+                cwd=target_dir,
+            )
+            if commit_result.code != 0:
+                _write_log(log_dir, "stderr.log", commit_result.stderr)
+                _emit_error_and_exit(
+                    jsonl,
+                    command,
+                    step_id,
+                    ERROR_TEMPLATE_APPLY_FAILED,
+                    "template apply failed",
+                    {"repo": full_name, "details": commit_result.stderr},
+                )
+
+            push_result = _run_command(["git", "push", "-u", "origin", branch_name], cwd=target_dir)
+            if push_result.code != 0:
+                _write_log(log_dir, "stderr.log", push_result.stderr)
+                _emit_error_and_exit(
+                    jsonl,
+                    command,
+                    step_id,
+                    ERROR_GIT_PUSH_FAILED,
+                    "git push failed",
+                    {"repo": full_name, "details": push_result.stderr},
+                )
+
             emit_jsonl(
                 jsonl,
                 event="result",
-                status="noop",
+                status="ok",
                 command=command,
                 step_id=step_id,
-                data={"repo": full_name, "status": "noop", "template_source": f"{template_full}@{aaa_tag}"},
+                data={
+                    "repo": full_name,
+                    "branch": branch_name,
+                    "template_source": f"{template_full}@{aaa_tag}",
+                    "status": "noop",
+                    "forced": True,
+                },
             )
             continue
 
