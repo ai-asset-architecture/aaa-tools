@@ -23,7 +23,12 @@
     ],
     "preconditions": [],
     "outputs": [],
-    "required_scopes": [],
+    "required_scopes": [
+      "fs:write",
+      "notify:send",
+      "gov:index",
+      "eval:run"
+    ],
     "timeout_seconds": 300,
     "idempotency_check": {
       "command": "test -f {{inputs.definition_path}}",
