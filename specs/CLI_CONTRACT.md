@@ -32,6 +32,17 @@ Runbooks are executed via `aaa run runbook <id>@<version>` and must validate aga
 `specs/runbook.schema.json` before execution. Runtime MUST reject runbooks that
 fail schema validation or checksum verification.
 
+### 0.5.1 Action Scopes (v0.6)
+
+Runbook execution must declare `contract.required_scopes`. The runtime only allows
+actions whose required scopes are included.
+
+Default scopes:
+- `notify:send` — emit structured notifications (stdout)
+- `fs:write` — write/update files on disk
+- `gov:index` — run governance index generation
+- `eval:run` — execute evaluation suites
+
 ---
 
 ## 1) Global Conventions
