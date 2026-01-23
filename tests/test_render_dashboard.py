@@ -18,6 +18,18 @@ class TestRenderDashboard(unittest.TestCase):
         self.assertEqual(rows[1]["compliant"], None)
         self.assertEqual(rows[2]["compliant"], False)
 
+    def test_render_outputs_include_repo_rows(self):
+        from aaa.ops.render_dashboard import render_markdown, render_html
+
+        rows = [
+            {"name": "a", "repo_type": "docs", "compliant": True, "checks": [{"id": "x", "status": "pass"}]},
+        ]
+        md = render_markdown("2026-01-24", 1.0, rows)
+        html = render_html("2026-01-24", 1.0, rows)
+        self.assertIn("a", md)
+        self.assertIn("a", html)
+        self.assertIn("Compliance Rate", html)
+
 
 if __name__ == "__main__":
     unittest.main()
