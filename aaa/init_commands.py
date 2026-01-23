@@ -101,6 +101,37 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _load_checks_manifest() -> Optional[dict[str, Any]]:
+    manifest_path = Path(
+        os.environ.get("AAA_CHECKS_MANIFEST", REPO_ROOT.parent / "aaa-actions" / "checks.manifest.json")
+    )
+    if manifest_path.is_file():
+        return verify_ci_module.load_checks_manifest(manifest_path)
+    return None
+
+
+def _repo_type_from_plan(repo: dict[str, Any]) -> str:
+    value = repo.get("repo_type") or repo.get("type") or "all"
+    repo_type = str(value).strip()
+    return repo_type if repo_type else "all"
+
+
+def _upsert_repo_type_index(target_dir: Path, repo_type: str) -> None:
+    if not repo_type:
+        return
+    index_path = target_dir / "index.json"
+    payload: dict[str, Any] = {}
+    if index_path.exists():
+        try:
+            payload = json.loads(index_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    payload["repo_type"] = repo_type
+    index_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+
 def _schema_error_hint(error: Exception, instance: Any) -> str:
     try:
         if isinstance(instance, list) and "required_checks" in list(error.path):
@@ -754,13 +785,6 @@ def ensure_repos(
     visibility = plan.get("target", {}).get("visibility", "private")
     repos = plan.get("repos", [])
 
-    manifest = None
-    manifest_path = Path(
-        os.environ.get("AAA_CHECKS_MANIFEST", REPO_ROOT.parent / "aaa-actions" / "checks.manifest.json")
-    )
-    if manifest_path.is_file():
-        manifest = verify_ci_module.load_checks_manifest(manifest_path)
-
     for repo in repos:
         repo_name = str(repo.get("name", "")).strip()
         if not repo_name:
@@ -950,6 +974,7 @@ def apply_templates(
             if item.name == ".git":
                 continue
             _copy_tree(item, target_dir / item.name)
+        _upsert_repo_type_index(target_dir, _repo_type_from_plan(repo))
 
         status_result = _run_command(["git", "status", "--porcelain"], cwd=target_dir)
         if not status_result.stdout.strip():
@@ -1068,6 +1093,7 @@ def protect(
     plan = _plan_from_file(from_plan)
     default_branch = _default_branch_from_plan(plan)
     repos = plan.get("repos", [])
+    manifest = _load_checks_manifest()
 
     for repo in repos:
         repo_name = str(repo.get("name", "")).strip()
@@ -1080,7 +1106,7 @@ def protect(
                 "repo name missing in plan",
             )
         full_name = _resolve_repo_full_name(org, repo_name)
-        repo_type = str(repo.get("repo_type") or "all")
+        repo_type = _repo_type_from_plan(repo)
         if manifest:
             checks = [
                 item["name"]
@@ -1179,6 +1205,7 @@ def verify_ci(
     plan = _plan_from_file(from_plan)
     default_branch = _default_branch_from_plan(plan)
     repos = plan.get("repos", [])
+    manifest = _load_checks_manifest()
 
     if dry_run:
         emit_jsonl(
@@ -1202,17 +1229,25 @@ def verify_ci(
                 "repo name missing in plan",
             )
         full_name = _resolve_repo_full_name(org, repo_name)
-        checks = _required_checks_from_plan(repo)
-        missing = _missing_required_checks(checks)
-        if missing:
-            _emit_error_and_exit(
-                jsonl,
-                command,
-                step_id,
-                ERROR_REQUIRED_CHECKS_MISMATCH,
-                "required checks mismatch",
-                {"repo": full_name, "missing": missing},
-            )
+        repo_type = _repo_type_from_plan(repo)
+        if manifest:
+            checks = [
+                item["name"]
+                for item in manifest.get("checks", [])
+                if "all" in set(item.get("applies_to", [])) or repo_type in set(item.get("applies_to", []))
+            ]
+        else:
+            checks = _required_checks_from_plan(repo)
+            missing = _missing_required_checks(checks)
+            if missing:
+                _emit_error_and_exit(
+                    jsonl,
+                    command,
+                    step_id,
+                    ERROR_REQUIRED_CHECKS_MISMATCH,
+                    "required checks mismatch",
+                    {"repo": full_name, "missing": missing},
+                )
 
         _require_tool("gh", jsonl, command, step_id, dry_run=False)
         api_result = _run_command(["gh", "api", f"repos/{full_name}/commits/{default_branch}/check-runs"])
