@@ -48,7 +48,7 @@ Recommended install is pinned to a released tag.
 gh auth setup-git
 
 # Install a pinned version
-python3 -m pip install "git+https://github.com/ai-asset-architecture/aaa-tools.git@v0.2.0"
+python3 -m pip install "git+https://github.com/ai-asset-architecture/aaa-tools.git@v0.7.1"
 
 # Verify
 aaa --version
@@ -57,7 +57,7 @@ aaa --version
 Update to a newer version by re-running the install command with a newer tag:
 
 ```bash
-python3 -m pip install --upgrade "git+https://github.com/ai-asset-architecture/aaa-tools.git@v0.2.0"
+python3 -m pip install --upgrade "git+https://github.com/ai-asset-architecture/aaa-tools.git@v0.7.1"
 ```
 
 ## CLI 背景與使用說明
