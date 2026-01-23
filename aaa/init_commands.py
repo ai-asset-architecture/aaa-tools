@@ -101,6 +101,19 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def write_repo_metadata(repo_root: Path, repo_type: str, plan_ref: str) -> None:
+    anchor_dir = repo_root / ".aaa"
+    anchor_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "repo_type": repo_type,
+        "plan_ref": plan_ref,
+    }
+    (anchor_dir / "metadata.json").write_text(
+        json.dumps(payload, ensure_ascii=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _load_checks_manifest() -> Optional[dict[str, Any]]:
     manifest_path = Path(
         os.environ.get("AAA_CHECKS_MANIFEST", REPO_ROOT.parent / "aaa-actions" / "checks.manifest.json")
@@ -785,6 +798,7 @@ def ensure_repos(
     visibility = plan.get("target", {}).get("visibility", "private")
     repos = plan.get("repos", [])
 
+    plan_ref = from_plan.name
     for repo in repos:
         repo_name = str(repo.get("name", "")).strip()
         if not repo_name:
@@ -974,7 +988,8 @@ def apply_templates(
             if item.name == ".git":
                 continue
             _copy_tree(item, target_dir / item.name)
-        _upsert_repo_type_index(target_dir, _repo_type_from_plan(repo))
+        repo_type = _repo_type_from_plan(repo)
+        write_repo_metadata(target_dir, repo_type, plan_ref)
 
         status_result = _run_command(["git", "status", "--porcelain"], cwd=target_dir)
         if not status_result.stdout.strip():
