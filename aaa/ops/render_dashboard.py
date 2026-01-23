@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 
@@ -82,3 +83,14 @@ def render_html(date_str: str, compliance_rate: float, rows: list[dict]) -> str:
         rate_pct=f"{compliance_rate:.0%}",
         rows="\n".join(row_lines),
     )
+
+
+def render_dashboard(input_path: str, md_out: str, html_out: str) -> float:
+    payload = json.loads(Path(input_path).read_text(encoding="utf-8"))
+    compliance_rate, rows = compute_compliance(payload)
+    date_str = payload.get("generated_at") or "-"
+    md = render_markdown(date_str, compliance_rate, rows)
+    html = render_html(date_str, compliance_rate, rows)
+    Path(md_out).write_text(md, encoding="utf-8")
+    Path(html_out).write_text(html, encoding="utf-8")
+    return compliance_rate

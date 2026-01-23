@@ -136,6 +136,7 @@ if typer:
 if typer:
     run_typer = typer.Typer(no_args_is_help=True)
     governance_typer = typer.Typer(no_args_is_help=True)
+    ops_typer = typer.Typer(no_args_is_help=True)
 
     @run_typer.command("runbook")
     def run_runbook(
@@ -179,6 +180,20 @@ if typer:
             dry_run=dry_run,
         )
         typer.echo(json.dumps(payload, indent=2))
+
+    @ops_typer.command("render-dashboard")
+    def ops_render_dashboard(
+        input_path: Path = typer.Option(..., "--input", help="Input JSON file"),
+        md_out: Path = typer.Option(..., "--md-out", help="Markdown output path"),
+        html_out: Path = typer.Option(..., "--html-out", help="HTML output path"),
+        threshold: float = typer.Option(0.8, "--threshold", help="Compliance threshold"),
+    ):
+        """Render governance dashboard outputs."""
+        from aaa.ops.render_dashboard import render_dashboard
+
+        compliance_rate = render_dashboard(str(input_path), str(md_out), str(html_out))
+        if compliance_rate < threshold:
+            raise typer.Exit(code=1)
 
 
 def sync_skills(target: str = "codex"):
@@ -230,6 +245,7 @@ if typer:
     app.add_typer(init_commands.init_app, name="init")
     app.add_typer(run_typer, name="run")
     app.add_typer(governance_typer, name="governance")
+    app.add_typer(ops_typer, name="ops")
 
 
 def _run_fallback() -> int:
@@ -257,6 +273,14 @@ def _run_fallback() -> int:
     validate_parser.add_argument("--schema", default=str(REPO_ROOT / "specs" / "plan.schema.json"))
     validate_parser.add_argument("--jsonl", action="store_true")
     validate_parser.add_argument("--log-dir")
+
+    ops_parser = subparsers.add_parser("ops")
+    ops_sub = ops_parser.add_subparsers(dest="ops_command")
+    render_parser = ops_sub.add_parser("render-dashboard")
+    render_parser.add_argument("--input", required=True)
+    render_parser.add_argument("--md-out", required=True)
+    render_parser.add_argument("--html-out", required=True)
+    render_parser.add_argument("--threshold", type=float, default=0.8)
 
     ensure_parser = init_sub.add_parser("ensure-repos")
     ensure_parser.add_argument("--org", required=True)
@@ -430,6 +454,15 @@ def _run_fallback() -> int:
                 dry_run=args.dry_run,
             )
             print(json.dumps(payload, indent=2))
+            return 0
+
+    if args.command == "ops":
+        if args.ops_command == "render-dashboard":
+            from aaa.ops.render_dashboard import render_dashboard
+
+            compliance_rate = render_dashboard(args.input, args.md_out, args.html_out)
+            if compliance_rate < args.threshold:
+                return 1
             return 0
 
     if args.command == "run":
