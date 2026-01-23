@@ -1472,7 +1472,13 @@ def repo_checks(
             {"path": str(runner)},
         )
 
-    checks = ["readme", "workflow", "skills", "prompt"]
+    checks = [
+        "readme",
+        "workflow",
+        "repo_type_consistency",
+        "checks_manifest_alignment",
+        "orphaned_assets",
+    ]
     failed = []
 
     for repo in repos:
@@ -1502,11 +1508,19 @@ def repo_checks(
             failed.append({"repo": repo_name, "check": "repo_path", "message": "repo path missing"})
             continue
 
+        repo_type = _repo_type_from_plan(repo)
+        manifest_path = os.environ.get(
+            "AAA_CHECKS_MANIFEST",
+            str(REPO_ROOT.parent / "aaa-actions" / "checks.manifest.json"),
+        )
         repo_results = []
         for check in checks:
-            run_result = _run_command(
-                ["python3", str(runner), "--check", check, "--repo", str(repo_path)]
-            )
+            args = ["python3", str(runner), "--check", check, "--repo", str(repo_path)]
+            if repo_type:
+                args.extend(["--repo-type", repo_type])
+            if check == "checks_manifest_alignment":
+                args.extend(["--manifest-path", manifest_path])
+            run_result = _run_command(args)
             try:
                 payload = json.loads(run_result.stdout) if run_result.stdout else {}
             except json.JSONDecodeError:
