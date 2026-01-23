@@ -20,6 +20,13 @@ const translations = {
     "table.type": "Type",
     "table.compliance": "Compliance",
     "table.failing": "Failing Checks",
+    "trend.title": "Compliance Trend",
+    "trend.subtitle": "Rolling view of nightly compliance.",
+    "trend.legend": "Compliance Rate",
+    "trend.empty": "Collecting data…",
+    "trend.latest": "Latest",
+    "trend.delta": "Change",
+    "trend.threshold": "Threshold",
   },
   zh: {
     "dashboard.subtitle": "治理合規",
@@ -42,6 +49,13 @@ const translations = {
     "table.type": "類型",
     "table.compliance": "合規",
     "table.failing": "未通過檢查",
+    "trend.title": "合規趨勢",
+    "trend.subtitle": "每晚稽核的合規走勢。",
+    "trend.legend": "合規率",
+    "trend.empty": "資料累積中…",
+    "trend.latest": "最新",
+    "trend.delta": "變動",
+    "trend.threshold": "門檻",
   },
 };
 
@@ -77,15 +91,87 @@ function setLang(lang) {
   localStorage.setItem("aaa-dashboard-lang", lang);
 }
 
+function formatRate(value, lang) {
+  if (value === null || value === undefined) {
+    return "--";
+  }
+  const pct = (value * 100).toFixed(1) + "%";
+  return pct;
+}
+
+function renderTrend(entries, lang) {
+  const emptyEl = document.getElementById("trend-empty");
+  const line = document.getElementById("trend-line");
+  const area = document.getElementById("trend-area");
+  const latestEl = document.querySelector('[data-metric="latest-rate"]');
+  const deltaEl = document.querySelector('[data-metric="delta-rate"]');
+
+  if (!entries || entries.length < 2) {
+    if (emptyEl) emptyEl.style.display = "flex";
+    if (line) line.setAttribute("d", "");
+    if (area) area.setAttribute("d", "");
+    if (latestEl) latestEl.textContent = "--";
+    if (deltaEl) deltaEl.textContent = "--";
+    return;
+  }
+
+  const points = entries.map((item, idx) => ({
+    x: idx,
+    y: item.compliance_rate,
+  }));
+  const maxX = points.length - 1;
+  const width = 600;
+  const height = 180;
+  const padding = 16;
+
+  const toX = (x) => padding + (x / maxX) * (width - padding * 2);
+  const toY = (y) => padding + (1 - y) * (height - padding * 2);
+
+  const path = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.x)} ${toY(p.y)}`)
+    .join(" ");
+
+  const areaPath = `${path} L ${toX(maxX)} ${height - padding} L ${toX(0)} ${height - padding} Z`;
+
+  line.setAttribute("d", path);
+  area.setAttribute("d", areaPath);
+  if (emptyEl) emptyEl.style.display = "none";
+
+  const latest = entries[entries.length - 1].compliance_rate;
+  const prev = entries[entries.length - 2].compliance_rate;
+  const delta = latest - prev;
+  latestEl.textContent = formatRate(latest, lang);
+  const sign = delta > 0 ? "+" : "";
+  deltaEl.textContent = `${sign}${(delta * 100).toFixed(1)}%`;
+  deltaEl.style.color = delta >= 0 ? "var(--success)" : "var(--danger)";
+}
+
+async function loadTrend(lang) {
+  try {
+    const res = await fetch("trends.json", { cache: "no-store" });
+    if (!res.ok) {
+      renderTrend([], lang);
+      return;
+    }
+    const data = await res.json();
+    renderTrend(data, lang);
+  } catch (err) {
+    renderTrend([], lang);
+  }
+}
+
 const savedTheme = localStorage.getItem("aaa-dashboard-theme") || "light";
 const savedLang = localStorage.getItem("aaa-dashboard-lang") || "en";
 setTheme(savedTheme);
 setLang(savedLang);
+loadTrend(savedLang);
 
 themeToggle.addEventListener("click", () => {
   setTheme(root.dataset.theme === "dark" ? "light" : "dark");
 });
 
 langToggle.addEventListener("click", () => {
-  setLang(root.dataset.lang === "en" ? "zh" : "en");
+  const nextLang = root.dataset.lang === "en" ? "zh" : "en";
+  setLang(nextLang);
+  loadTrend(nextLang);
 });

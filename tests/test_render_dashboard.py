@@ -12,11 +12,12 @@ class TestRenderDashboard(unittest.TestCase):
                 {"name": "c", "archived": False, "checks": [{"id": "x", "status": "error"}]},
             ]
         }
-        rate, rows = compute_compliance(payload)
+        rate, rows, summary = compute_compliance(payload)
         self.assertAlmostEqual(rate, 0.5)
         self.assertEqual(rows[0]["compliant"], True)
         self.assertEqual(rows[1]["compliant"], None)
         self.assertEqual(rows[2]["compliant"], False)
+        self.assertEqual(summary["total_repos"], 3)
 
     def test_render_outputs_include_repo_rows(self):
         from aaa.ops.render_dashboard import render_markdown, render_html
@@ -24,8 +25,15 @@ class TestRenderDashboard(unittest.TestCase):
         rows = [
             {"name": "a", "repo_type": "docs", "compliant": True, "checks": [{"id": "x", "status": "pass"}]},
         ]
-        md = render_markdown("2026-01-24", 1.0, rows)
-        html = render_html("2026-01-24", 1.0, rows)
+        summary = {
+            "total_repos": 1,
+            "eligible_repos": 1,
+            "compliant_repos": 1,
+            "failing_repos": 0,
+            "archived_repos": 0,
+        }
+        md = render_markdown("2026-01-24", 1.0, rows, summary)
+        html = render_html("2026-01-24", 1.0, rows, summary)
         self.assertIn("a", md)
         self.assertIn("a", html)
         self.assertIn("Governance Compliance Dashboard", html)
@@ -65,6 +73,7 @@ class TestRenderDashboard(unittest.TestCase):
         self.assertTrue(html_path.exists())
         self.assertTrue((tmp_dir / "dashboard.css").exists())
         self.assertTrue((tmp_dir / "dashboard.js").exists())
+        self.assertTrue((tmp_dir / "trends.json").exists())
 
 
 if __name__ == "__main__":

@@ -25,7 +25,7 @@
     </header>
 
     <section class="kpi-grid">
-      <div class="kpi-card">
+      <div class="kpi-card kpi-primary">
         <div class="kpi-label" data-i18n="kpi.compliance">Compliance Rate</div>
         <div class="kpi-value">{{rate_pct}}</div>
         <div class="kpi-sub" data-i18n="kpi.compliance_hint">All checks pass across active repos.</div>
@@ -35,7 +35,7 @@
         <div class="kpi-value">{{total_repos}}</div>
         <div class="kpi-sub"><span data-i18n="kpi.active_repos">Active</span>: {{eligible_repos}}</div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card kpi-alert">
         <div class="kpi-label" data-i18n="kpi.failing_repos">Failing Repos</div>
         <div class="kpi-value">{{failing_repos}}</div>
         <div class="kpi-sub" data-i18n="kpi.failing_hint">Requires action.</div>
@@ -44,6 +44,42 @@
         <div class="kpi-label" data-i18n="kpi.archived_repos">Archived</div>
         <div class="kpi-value">{{archived_repos}}</div>
         <div class="kpi-sub" data-i18n="kpi.archived_hint">Excluded from rate.</div>
+      </div>
+    </section>
+
+    <section class="trend-card">
+      <div class="trend-header">
+        <div>
+          <div class="trend-title" data-i18n="trend.title">Compliance Trend</div>
+          <div class="trend-sub" data-i18n="trend.subtitle">Rolling view of nightly compliance.</div>
+        </div>
+        <div class="trend-legend">
+          <span class="legend-dot"></span>
+          <span data-i18n="trend.legend">Compliance Rate</span>
+        </div>
+      </div>
+      <div class="trend-body">
+        <div class="trend-chart">
+          <svg id="trend-chart" viewBox="0 0 600 200" role="img" aria-label="Compliance trend chart">
+            <path id="trend-line" d="" />
+            <path id="trend-area" d="" />
+          </svg>
+          <div class="trend-empty" id="trend-empty" data-i18n="trend.empty">Collecting data…</div>
+        </div>
+        <div class="trend-stats">
+          <div class="trend-stat">
+            <div class="trend-label" data-i18n="trend.latest">Latest</div>
+            <div class="trend-value" data-metric="latest-rate">--</div>
+          </div>
+          <div class="trend-stat">
+            <div class="trend-label" data-i18n="trend.delta">Change</div>
+            <div class="trend-value" data-metric="delta-rate">--</div>
+          </div>
+          <div class="trend-stat">
+            <div class="trend-label" data-i18n="trend.threshold">Threshold</div>
+            <div class="trend-value">0.8</div>
+          </div>
+        </div>
       </div>
     </section>
 

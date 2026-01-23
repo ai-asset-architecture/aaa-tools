@@ -84,6 +84,25 @@ def _build_failing_list(rows: list[dict]) -> list[dict]:
     return failing
 
 
+def _update_trends(path: Path, date_str: str, compliance_rate: float, total_repos: int) -> None:
+    entries = []
+    if path.exists():
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            entries = []
+    entries.append(
+        {
+            "date": date_str,
+            "compliance_rate": round(compliance_rate, 4),
+            "total_repos": total_repos,
+        }
+    )
+    if len(entries) > 90:
+        entries = entries[-90:]
+    path.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+
+
 def render_markdown(date_str: str, compliance_rate: float, rows: list[dict], summary: dict) -> str:
     row_lines = []
     for repo in rows:
@@ -176,4 +195,10 @@ def render_dashboard(input_path: str, md_out: str, html_out: str) -> float:
     js = _render_template("dashboard.js.tmpl")
     (html_path.parent / "dashboard.css").write_text(css, encoding="utf-8")
     (html_path.parent / "dashboard.js").write_text(js, encoding="utf-8")
+    _update_trends(
+        html_path.parent / "trends.json",
+        date_str,
+        compliance_rate,
+        summary.get("total_repos", 0),
+    )
     return compliance_rate
