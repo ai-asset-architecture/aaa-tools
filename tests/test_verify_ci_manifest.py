@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aaa.verify_ci import load_checks_manifest
+from aaa.verify_ci import load_checks_manifest, validate_checks
 
 
 class TestVerifyCiManifest(unittest.TestCase):
@@ -29,6 +29,21 @@ class TestVerifyCiManifest(unittest.TestCase):
             payload = load_checks_manifest(manifest)
 
             self.assertEqual(payload["checks"][0]["id"], "lint")
+
+    def test_validate_checks_flags_missing(self):
+        manifest = {
+            "checks": [
+                {"id": "lint", "name": "ci/lint / lint (pull_request)", "applies_to": ["all"]},
+                {"id": "security", "name": "Agent safety check", "applies_to": ["agent"]},
+            ]
+        }
+        actual = ["ci/test / test (pull_request)"]
+
+        ok, missing = validate_checks(actual, manifest, repo_type="docs")
+
+        self.assertIs(ok, False)
+        self.assertIn("ci/lint / lint (pull_request)", missing)
+        self.assertNotIn("Agent safety check", missing)
 
 
 if __name__ == "__main__":

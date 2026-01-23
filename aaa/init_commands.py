@@ -31,6 +31,7 @@ except Exception:  # pragma: no cover - fallback when jsonschema isn't available
     Draft202012Validator = None
 
 from .jsonl import emit_jsonl
+from . import verify_ci as verify_ci_module
 
 
 if _HAS_TYPER:
@@ -753,6 +754,13 @@ def ensure_repos(
     visibility = plan.get("target", {}).get("visibility", "private")
     repos = plan.get("repos", [])
 
+    manifest = None
+    manifest_path = Path(
+        os.environ.get("AAA_CHECKS_MANIFEST", REPO_ROOT.parent / "aaa-actions" / "checks.manifest.json")
+    )
+    if manifest_path.is_file():
+        manifest = verify_ci_module.load_checks_manifest(manifest_path)
+
     for repo in repos:
         repo_name = str(repo.get("name", "")).strip()
         if not repo_name:
@@ -1072,17 +1080,25 @@ def protect(
                 "repo name missing in plan",
             )
         full_name = _resolve_repo_full_name(org, repo_name)
-        checks = _required_checks_from_plan(repo)
-        missing = _missing_required_checks(checks)
-        if missing:
-            _emit_error_and_exit(
-                jsonl,
-                command,
-                step_id,
-                ERROR_REQUIRED_CHECKS_MISMATCH,
-                "required checks mismatch",
-                {"repo": full_name, "missing": missing},
-            )
+        repo_type = str(repo.get("repo_type") or "all")
+        if manifest:
+            checks = [
+                item["name"]
+                for item in manifest.get("checks", [])
+                if "all" in set(item.get("applies_to", [])) or repo_type in set(item.get("applies_to", []))
+            ]
+        else:
+            checks = _required_checks_from_plan(repo)
+            missing = _missing_required_checks(checks)
+            if missing:
+                _emit_error_and_exit(
+                    jsonl,
+                    command,
+                    step_id,
+                    ERROR_REQUIRED_CHECKS_MISMATCH,
+                    "required checks mismatch",
+                    {"repo": full_name, "missing": missing},
+                )
         settings = {
             "required_status_checks": {"strict": True, "contexts": checks},
             "enforce_admins": {"enabled": True},
