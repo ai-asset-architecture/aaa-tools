@@ -10,7 +10,9 @@ try:
 except Exception:  # pragma: no cover - fallback when typer isn't available
     typer = None
 
+from . import check_commands
 from . import init_commands
+from . import pack_commands
 from . import governance_commands
 from . import runbook_registry
 from . import runbook_runtime
@@ -137,6 +139,7 @@ if typer:
     run_typer = typer.Typer(no_args_is_help=True)
     governance_typer = typer.Typer(no_args_is_help=True)
     ops_typer = typer.Typer(no_args_is_help=True)
+    pack_typer = typer.Typer(no_args_is_help=True)
 
     @run_typer.command("runbook")
     def run_runbook(
@@ -195,6 +198,12 @@ if typer:
         if compliance_rate < threshold:
             raise typer.Exit(code=1)
 
+    @pack_typer.command("list")
+    def pack_list():
+        """List installed packs for the current repo."""
+        payload = pack_commands.list_packs(Path.cwd())
+        typer.echo(json.dumps(payload, ensure_ascii=True))
+
 
 def sync_skills(target: str = "codex"):
     """Sync skills to the specified target."""
@@ -229,6 +238,16 @@ if typer:
         """Lint workspace (stub)."""
         typer.echo("lint stub")
 
+    @app.command("check")
+    def check(mode: str = typer.Option("blocking", "--mode", help="blocking")):
+        """Run governance checks for the current repo."""
+        if mode != "blocking":
+            raise typer.Exit(code=2)
+        result = check_commands.run_blocking_check(Path.cwd())
+        typer.echo(json.dumps(result, ensure_ascii=True))
+        if result["exit_code"]:
+            raise typer.Exit(code=result["exit_code"])
+
 
 if typer:
     @app.command("eval")
@@ -246,6 +265,7 @@ if typer:
     app.add_typer(run_typer, name="run")
     app.add_typer(governance_typer, name="governance")
     app.add_typer(ops_typer, name="ops")
+    app.add_typer(pack_typer, name="pack")
 
 
 def _run_fallback() -> int:
@@ -334,6 +354,9 @@ def _run_fallback() -> int:
     runbook_parser.add_argument("--json", action="store_true")
     runbook_parser.add_argument("--runbook-file")
 
+    check_parser = subparsers.add_parser("check")
+    check_parser.add_argument("--mode", default="blocking")
+
     governance_parser = subparsers.add_parser("governance")
     governance_sub = governance_parser.add_subparsers(dest="governance_command")
     update_index_parser = governance_sub.add_parser("update-index")
@@ -347,6 +370,10 @@ def _run_fallback() -> int:
     update_index_parser.add_argument("--sort-by", default="filename")
     update_index_parser.add_argument("--hash-algo", default="sha256")
     update_index_parser.add_argument("--dry-run", action="store_true")
+
+    pack_parser = subparsers.add_parser("pack")
+    pack_sub = pack_parser.add_subparsers(dest="pack_command")
+    pack_sub.add_parser("list")
 
     args = parser.parse_args()
     if args.version:
@@ -456,6 +483,12 @@ def _run_fallback() -> int:
             print(json.dumps(payload, indent=2))
             return 0
 
+    if args.command == "pack":
+        if args.pack_command == "list":
+            payload = pack_commands.list_packs(Path.cwd())
+            print(json.dumps(payload, ensure_ascii=True))
+            return 0
+
     if args.command == "ops":
         if args.ops_command == "render-dashboard":
             from aaa.ops.render_dashboard import render_dashboard
@@ -475,6 +508,13 @@ def _run_fallback() -> int:
             )
             return exit_code
         parser.error("init requires a subcommand")
+
+    if args.command == "check":
+        if args.mode != "blocking":
+            return 2
+        result = check_commands.run_blocking_check(Path.cwd())
+        print(json.dumps(result, ensure_ascii=True))
+        return result["exit_code"]
 
     if args.command == "run":
         if args.run_command == "runbook":
