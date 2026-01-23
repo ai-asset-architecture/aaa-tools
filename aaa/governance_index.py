@@ -114,6 +114,7 @@ def update_index(
     if not directory.exists() or not directory.is_dir():
         raise ValueError("target_dir must be an existing directory")
     files = sorted(directory.glob(pattern))
+    files = [path for path in files if path.name != "README.md"]
     if not files:
         raise ValueError("no files matched pattern")
 

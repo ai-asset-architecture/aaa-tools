@@ -1,19 +1,12 @@
 {
-  "generated_at": "2026-01-23T00:21:47Z",
-  "source_dir": "aaa-tools/specs",
+  "generated_at": "2026-01-23T00:42:04Z",
+  "source_dir": "/Users/imac/Documents/Code/AI-Lotto/AAA_WORKSPACE/aaa-tools/specs",
   "hash_algo": "sha256",
   "files": [
     {
       "path": "CLI_CONTRACT.md",
       "title": "CLI_CONTRACT.md \u2014 AAA Tools CLI Contract (v0.1)",
       "hash": "f5be4fef09e80d2277ae61e1ff127897067eb0859491b1c8c9a53a55f091f5df",
-      "last_modified": "2026-01-22",
-      "metadata": {}
-    },
-    {
-      "path": "README.md",
-      "title": "Specs Index",
-      "hash": "b556e933de387c1c9a58ba27da52fe4a65ab9cf6ac3e62098bb4713dfbb05660",
       "last_modified": "2026-01-22",
       "metadata": {}
     },

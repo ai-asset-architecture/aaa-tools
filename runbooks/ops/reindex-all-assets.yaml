@@ -3,7 +3,7 @@
     "id": "ops/reindex-all-assets",
     "version": "1.0.0",
     "source": "local",
-    "checksum": "sha256:95b984cf98e1beeebaf538cc1637dff3e289e4da96cf18887842e981ba3d61da",
+    "checksum": "sha256:6b373f13bfa789b29c8d009cd932e16b50a2de059f8494b2ec92c0782111ee21",
     "requires_engine": ">=0.5.0"
   },
   "contract": {
@@ -38,7 +38,7 @@
         "--pattern",
         "*.md",
         "--template",
-        "## Milestones Index\n\n| File | Title |\n| --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} |\n{{ end }}",
+        "## Milestones Index\n\n| File | Title | Summary (ZH-TW) | Summary (EN) |\n| --- | --- | --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} | {{ .Metadata.summary_zh }} | {{ .Metadata.summary_en }} |\n{{ end }}",
         "--index-output",
         "index.json",
         "--metadata-field",
@@ -46,7 +46,11 @@
         "--metadata-field",
         "owner",
         "--metadata-field",
-        "date"
+        "date",
+        "--metadata-field",
+        "summary_zh",
+        "--metadata-field",
+        "summary_en"
       ]
     },
     {
@@ -72,9 +76,13 @@
         "--pattern",
         "*.md",
         "--template",
-        "## Milestones (Implementation & Verification Reports)\n\n| File | Title |\n| --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} |\n{{ end }}",
+        "## Milestones (Implementation & Verification Reports)\n\n| File | Title | Summary (ZH-TW) | Summary (EN) |\n| --- | --- | --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} | {{ .Metadata.summary_zh }} | {{ .Metadata.summary_en }} |\n{{ end }}",
         "--index-output",
-        "index.json"
+        "index.json",
+        "--metadata-field",
+        "summary_zh",
+        "--metadata-field",
+        "summary_en"
       ]
     },
     {

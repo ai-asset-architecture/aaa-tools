@@ -110,7 +110,7 @@ def _render_template(value: str, inputs: dict[str, Any], steps: list[dict[str, A
         if expr.startswith("inputs."):
             key = expr.split(".", 1)[1]
             return str(inputs.get(key, ""))
-        return ""
+        return match.group(0)
 
     return re.sub(r"\{\{\s*([^}]+)\s*\}\}", replace, value)
 
