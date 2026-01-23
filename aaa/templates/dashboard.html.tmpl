@@ -1,32 +1,80 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light" data-lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Governance Compliance Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    .kpi { font-size: 2rem; font-weight: 700; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-    th, td { border: 1px solid #ddd; padding: 0.5rem; }
-    th { background: #f5f5f5; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="dashboard.js" defer></script>
 </head>
 <body>
-  <h1>Governance Compliance Dashboard</h1>
-  <div>Date: {{date}}</div>
-  <div class="kpi">Compliance Rate: {{rate_pct}}</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Repo</th>
-        <th>Type</th>
-        <th>Compliance</th>
-        <th>Failing Checks</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{rows}}
-    </tbody>
-  </table>
+  <div class="page">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow" data-i18n="dashboard.subtitle">Governance Compliance</div>
+        <h1 data-i18n="dashboard.title">Governance Compliance Dashboard</h1>
+        <div class="meta"><span data-i18n="dashboard.date">Date</span>: {{date}}</div>
+      </div>
+      <div class="controls">
+        <button class="toggle" id="theme-toggle" data-action="theme">Dark</button>
+        <button class="toggle" id="lang-toggle" data-action="lang">中文</button>
+      </div>
+    </header>
+
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpi.compliance">Compliance Rate</div>
+        <div class="kpi-value">{{rate_pct}}</div>
+        <div class="kpi-sub" data-i18n="kpi.compliance_hint">All checks pass across active repos.</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpi.total_repos">Total Repos</div>
+        <div class="kpi-value">{{total_repos}}</div>
+        <div class="kpi-sub"><span data-i18n="kpi.active_repos">Active</span>: {{eligible_repos}}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpi.failing_repos">Failing Repos</div>
+        <div class="kpi-value">{{failing_repos}}</div>
+        <div class="kpi-sub" data-i18n="kpi.failing_hint">Requires action.</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpi.archived_repos">Archived</div>
+        <div class="kpi-value">{{archived_repos}}</div>
+        <div class="kpi-sub" data-i18n="kpi.archived_hint">Excluded from rate.</div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel">
+        <div class="panel-title" data-i18n="panel.failing">Failing Repos</div>
+        <div class="panel-sub" data-i18n="panel.failing_hint">Highest priority remediation list.</div>
+        <ul class="failing-list">
+          {{failing_list}}
+        </ul>
+      </div>
+      <div class="panel">
+        <div class="panel-title" data-i18n="panel.inventory">Repo Inventory</div>
+        <div class="panel-sub" data-i18n="panel.inventory_hint">Full list with compliance status.</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="table.repo">Repo</th>
+                <th data-i18n="table.type">Type</th>
+                <th data-i18n="table.compliance">Compliance</th>
+                <th data-i18n="table.failing">Failing Checks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{rows}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
 </body>
 </html>

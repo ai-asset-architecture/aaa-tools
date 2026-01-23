@@ -28,7 +28,7 @@ class TestRenderDashboard(unittest.TestCase):
         html = render_html("2026-01-24", 1.0, rows)
         self.assertIn("a", md)
         self.assertIn("a", html)
-        self.assertIn("Compliance Rate", html)
+        self.assertIn("Governance Compliance Dashboard", html)
 
     def test_cli_render_dashboard(self):
         import json
@@ -63,6 +63,8 @@ class TestRenderDashboard(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertTrue(md_path.exists())
         self.assertTrue(html_path.exists())
+        self.assertTrue((tmp_dir / "dashboard.css").exists())
+        self.assertTrue((tmp_dir / "dashboard.js").exists())
 
 
 if __name__ == "__main__":
