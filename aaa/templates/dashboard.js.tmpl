@@ -5,6 +5,10 @@ const translations = {
     "dashboard.date": "Date",
     "kpi.compliance": "Compliance Rate",
     "kpi.compliance_hint": "All checks pass across active repos.",
+    "kpi.drift_rate": "Drift Rate",
+    "kpi.drift_hint": "Index consistency drift.",
+    "kpi.repo_health": "Repo Health",
+    "kpi.health_hint": "Average check pass ratio.",
     "kpi.total_repos": "Total Repos",
     "kpi.active_repos": "Active",
     "kpi.failing_repos": "Failing Repos",
@@ -23,6 +27,12 @@ const translations = {
     "trend.title": "Compliance Trend",
     "trend.subtitle": "Rolling view of nightly compliance.",
     "trend.legend": "Compliance Rate",
+    "trend.drift_title": "Drift Trend",
+    "trend.drift_subtitle": "Index drift rate over time.",
+    "trend.drift_legend": "Drift Rate",
+    "trend.health_title": "Repo Health Trend",
+    "trend.health_subtitle": "Average check pass ratio.",
+    "trend.health_legend": "Repo Health",
     "trend.empty": "Collecting data…",
     "trend.latest": "Latest",
     "trend.delta": "Change",
@@ -34,6 +44,10 @@ const translations = {
     "dashboard.date": "日期",
     "kpi.compliance": "合規率",
     "kpi.compliance_hint": "所有活動 Repo 的檢查結果。",
+    "kpi.drift_rate": "漂移率",
+    "kpi.drift_hint": "索引一致性漂移。",
+    "kpi.repo_health": "Repo 健康度",
+    "kpi.health_hint": "平均檢查通過比例。",
     "kpi.total_repos": "Repo 總數",
     "kpi.active_repos": "參與計算",
     "kpi.failing_repos": "不合規",
@@ -52,6 +66,12 @@ const translations = {
     "trend.title": "合規趨勢",
     "trend.subtitle": "每晚稽核的合規走勢。",
     "trend.legend": "合規率",
+    "trend.drift_title": "漂移趨勢",
+    "trend.drift_subtitle": "索引漂移率時間序列。",
+    "trend.drift_legend": "漂移率",
+    "trend.health_title": "Repo 健康趨勢",
+    "trend.health_subtitle": "平均檢查通過比例。",
+    "trend.health_legend": "Repo 健康度",
     "trend.empty": "資料累積中…",
     "trend.latest": "最新",
     "trend.delta": "變動",
@@ -91,7 +111,7 @@ function setLang(lang) {
   localStorage.setItem("aaa-dashboard-lang", lang);
 }
 
-function formatRate(value, lang) {
+function formatRate(value) {
   if (value === null || value === undefined) {
     return "--";
   }
@@ -99,12 +119,12 @@ function formatRate(value, lang) {
   return pct;
 }
 
-function renderTrend(entries, lang) {
-  const emptyEl = document.getElementById("trend-empty");
-  const line = document.getElementById("trend-line");
-  const area = document.getElementById("trend-area");
-  const latestEl = document.querySelector('[data-metric="latest-rate"]');
-  const deltaEl = document.querySelector('[data-metric="delta-rate"]');
+function renderTrendSeries(entries, metricKey, dom) {
+  const emptyEl = document.getElementById(dom.empty);
+  const line = document.getElementById(dom.line);
+  const area = document.getElementById(dom.area);
+  const latestEl = document.querySelector(`[data-metric="${dom.latest}"]`);
+  const deltaEl = document.querySelector(`[data-metric="${dom.delta}"]`);
 
   if (!entries || entries.length < 2) {
     if (emptyEl) emptyEl.style.display = "flex";
@@ -117,7 +137,7 @@ function renderTrend(entries, lang) {
 
   const points = entries.map((item, idx) => ({
     x: idx,
-    y: item.compliance_rate,
+    y: item[metricKey],
   }));
   const maxX = points.length - 1;
   const width = 600;
@@ -137,26 +157,112 @@ function renderTrend(entries, lang) {
   area.setAttribute("d", areaPath);
   if (emptyEl) emptyEl.style.display = "none";
 
-  const latest = entries[entries.length - 1].compliance_rate;
-  const prev = entries[entries.length - 2].compliance_rate;
+  const latest = entries[entries.length - 1][metricKey];
+  const prev = entries[entries.length - 2][metricKey];
   const delta = latest - prev;
-  latestEl.textContent = formatRate(latest, lang);
+  latestEl.textContent = formatRate(latest);
   const sign = delta > 0 ? "+" : "";
   deltaEl.textContent = `${sign}${(delta * 100).toFixed(1)}%`;
   deltaEl.style.color = delta >= 0 ? "var(--success)" : "var(--danger)";
+}
+
+async function loadMetrics() {
+  try {
+    const res = await fetch("metrics.json", { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error("metrics fetch failed");
+    }
+    const data = await res.json();
+    renderTrendSeries(data, "compliance_rate", {
+      empty: "trend-empty",
+      line: "trend-line",
+      area: "trend-area",
+      latest: "latest-rate",
+      delta: "delta-rate",
+    });
+    renderTrendSeries(data, "drift_rate", {
+      empty: "drift-empty",
+      line: "drift-line",
+      area: "drift-area",
+      latest: "latest-drift",
+      delta: "delta-drift",
+    });
+    renderTrendSeries(data, "repo_health", {
+      empty: "health-empty",
+      line: "health-line",
+      area: "health-area",
+      latest: "latest-health",
+      delta: "delta-health",
+    });
+  } catch (err) {
+    try {
+      const res = await fetch("trends.json", { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error("trends fetch failed");
+      }
+      const data = await res.json();
+      renderTrendSeries(data, "compliance_rate", {
+        empty: "trend-empty",
+        line: "trend-line",
+        area: "trend-area",
+        latest: "latest-rate",
+        delta: "delta-rate",
+      });
+    } catch (err2) {
+      renderTrendSeries([], "compliance_rate", {
+        empty: "trend-empty",
+        line: "trend-line",
+        area: "trend-area",
+        latest: "latest-rate",
+        delta: "delta-rate",
+      });
+    }
+    renderTrendSeries([], "drift_rate", {
+      empty: "drift-empty",
+      line: "drift-line",
+      area: "drift-area",
+      latest: "latest-drift",
+      delta: "delta-drift",
+    });
+    renderTrendSeries([], "repo_health", {
+      empty: "health-empty",
+      line: "health-line",
+      area: "health-area",
+      latest: "latest-health",
+      delta: "delta-health",
+    });
+  }
 }
 
 async function loadTrend(lang) {
   try {
     const res = await fetch("trends.json", { cache: "no-store" });
     if (!res.ok) {
-      renderTrend([], lang);
+      renderTrendSeries([], "compliance_rate", {
+        empty: "trend-empty",
+        line: "trend-line",
+        area: "trend-area",
+        latest: "latest-rate",
+        delta: "delta-rate",
+      });
       return;
     }
     const data = await res.json();
-    renderTrend(data, lang);
+    renderTrendSeries(data, "compliance_rate", {
+      empty: "trend-empty",
+      line: "trend-line",
+      area: "trend-area",
+      latest: "latest-rate",
+      delta: "delta-rate",
+    });
   } catch (err) {
-    renderTrend([], lang);
+    renderTrendSeries([], "compliance_rate", {
+      empty: "trend-empty",
+      line: "trend-line",
+      area: "trend-area",
+      latest: "latest-rate",
+      delta: "delta-rate",
+    });
   }
 }
 
@@ -164,7 +270,7 @@ const savedTheme = localStorage.getItem("aaa-dashboard-theme") || "light";
 const savedLang = localStorage.getItem("aaa-dashboard-lang") || "en";
 setTheme(savedTheme);
 setLang(savedLang);
-loadTrend(savedLang);
+loadMetrics();
 
 themeToggle.addEventListener("click", () => {
   setTheme(root.dataset.theme === "dark" ? "light" : "dark");
@@ -173,5 +279,5 @@ themeToggle.addEventListener("click", () => {
 langToggle.addEventListener("click", () => {
   const nextLang = root.dataset.lang === "en" ? "zh" : "en";
   setLang(nextLang);
-  loadTrend(nextLang);
+  loadMetrics();
 });

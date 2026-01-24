@@ -191,12 +191,25 @@ if typer:
         md_out: Path = typer.Option(..., "--md-out", help="Markdown output path"),
         html_out: Path = typer.Option(..., "--html-out", help="HTML output path"),
         threshold: float = typer.Option(0.8, "--threshold", help="Compliance threshold"),
+        drift_threshold: float = typer.Option(0.05, "--drift-threshold", help="Drift rate threshold"),
+        health_threshold: float = typer.Option(0.9, "--health-threshold", help="Repo health threshold"),
     ):
         """Render governance dashboard outputs."""
         from aaa.ops.render_dashboard import render_dashboard
 
-        compliance_rate = render_dashboard(str(input_path), str(md_out), str(html_out))
-        if compliance_rate < threshold:
+        compliance_rate, metrics = render_dashboard(
+            str(input_path),
+            str(md_out),
+            str(html_out),
+            {
+                "compliance": threshold,
+                "drift": drift_threshold,
+                "health": health_threshold,
+            },
+        )
+        drift_rate = metrics.get("drift_rate", 0.0)
+        repo_health = metrics.get("repo_health", 1.0)
+        if compliance_rate < threshold or drift_rate > drift_threshold or repo_health < health_threshold:
             raise typer.Exit(code=1)
 
     @pack_typer.command("list")
@@ -313,6 +326,8 @@ def _run_fallback() -> int:
     render_parser.add_argument("--md-out", required=True)
     render_parser.add_argument("--html-out", required=True)
     render_parser.add_argument("--threshold", type=float, default=0.8)
+    render_parser.add_argument("--drift-threshold", type=float, default=0.05)
+    render_parser.add_argument("--health-threshold", type=float, default=0.9)
 
     ensure_parser = init_sub.add_parser("ensure-repos")
     ensure_parser.add_argument("--org", required=True)
@@ -526,8 +541,19 @@ def _run_fallback() -> int:
         if args.ops_command == "render-dashboard":
             from aaa.ops.render_dashboard import render_dashboard
 
-            compliance_rate = render_dashboard(args.input, args.md_out, args.html_out)
-            if compliance_rate < args.threshold:
+            compliance_rate, metrics = render_dashboard(
+                args.input,
+                args.md_out,
+                args.html_out,
+                {
+                    "compliance": args.threshold,
+                    "drift": args.drift_threshold,
+                    "health": args.health_threshold,
+                },
+            )
+            drift_rate = metrics.get("drift_rate", 0.0)
+            repo_health = metrics.get("repo_health", 1.0)
+            if compliance_rate < args.threshold or drift_rate > args.drift_threshold or repo_health < args.health_threshold:
                 return 1
             return 0
 

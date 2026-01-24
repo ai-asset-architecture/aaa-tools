@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 ALLOWED_STATUS = {"pass", "fail", "error", "skip"}
+DRIFT_CHECKS = {"orphaned_assets", "checks_manifest_alignment"}
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
 
 
@@ -38,6 +39,30 @@ def compute_compliance(payload):
         "archived_repos": archived_count,
     }
     return rate, rows, summary
+
+
+def compute_metrics(payload: dict) -> dict[str, float]:
+    eligible = 0
+    drift_repos = 0
+    health_scores = []
+    for repo in payload.get("repos", []):
+        if repo.get("archived"):
+            continue
+        eligible += 1
+        checks = repo.get("checks", [])
+        statuses = [check.get("status") for check in checks]
+        total_checks = len(statuses)
+        pass_count = sum(1 for status in statuses if status == "pass")
+        health_scores.append((pass_count / total_checks) if total_checks else 1.0)
+        drift_checks = [check for check in checks if check.get("id") in DRIFT_CHECKS]
+        if drift_checks and any(check.get("status") != "pass" for check in drift_checks):
+            drift_repos += 1
+    drift_rate = (drift_repos / eligible) if eligible else 0.0
+    repo_health = (sum(health_scores) / eligible) if eligible else 1.0
+    return {
+        "drift_rate": drift_rate,
+        "repo_health": repo_health,
+    }
 
 
 def _format_compliance(value: bool | None) -> str:
@@ -103,7 +128,33 @@ def _update_trends(path: Path, date_str: str, compliance_rate: float, total_repo
     path.write_text(json.dumps(entries, indent=2), encoding="utf-8")
 
 
-def render_markdown(date_str: str, compliance_rate: float, rows: list[dict], summary: dict) -> str:
+def _update_metrics(path: Path, date_str: str, compliance_rate: float, metrics: dict[str, float]) -> None:
+    entries = []
+    if path.exists():
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            entries = []
+    entries.append(
+        {
+            "date": date_str,
+            "compliance_rate": round(compliance_rate, 4),
+            "drift_rate": round(metrics.get("drift_rate", 0.0), 4),
+            "repo_health": round(metrics.get("repo_health", 0.0), 4),
+        }
+    )
+    if len(entries) > 90:
+        entries = entries[-90:]
+    path.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+
+
+def render_markdown(
+    date_str: str,
+    compliance_rate: float,
+    rows: list[dict],
+    summary: dict,
+    metrics: dict[str, float],
+) -> str:
     row_lines = []
     for repo in rows:
         row_lines.append(
@@ -126,6 +177,8 @@ def render_markdown(date_str: str, compliance_rate: float, rows: list[dict], sum
         "dashboard.md.tmpl",
         date=date_str,
         rate_pct=f"{compliance_rate:.0%}",
+        drift_rate_pct=f"{metrics.get('drift_rate', 0.0):.0%}",
+        repo_health_pct=f"{metrics.get('repo_health', 0.0):.0%}",
         total_repos=str(summary.get("total_repos", 0)),
         eligible_repos=str(summary.get("eligible_repos", 0)),
         failing_repos=str(summary.get("failing_repos", 0)),
@@ -135,7 +188,14 @@ def render_markdown(date_str: str, compliance_rate: float, rows: list[dict], sum
     )
 
 
-def render_html(date_str: str, compliance_rate: float, rows: list[dict], summary: dict) -> str:
+def render_html(
+    date_str: str,
+    compliance_rate: float,
+    rows: list[dict],
+    summary: dict,
+    metrics: dict[str, float],
+    thresholds: dict[str, float],
+) -> str:
     row_lines = []
     for repo in rows:
         status_key = _format_status_key(repo.get("compliant"))
@@ -170,21 +230,33 @@ def render_html(date_str: str, compliance_rate: float, rows: list[dict], summary
         "dashboard.html.tmpl",
         date=date_str,
         rate_pct=f"{compliance_rate:.0%}",
+        drift_rate_pct=f"{metrics.get('drift_rate', 0.0):.0%}",
+        repo_health_pct=f"{metrics.get('repo_health', 0.0):.0%}",
         total_repos=str(summary.get("total_repos", 0)),
         eligible_repos=str(summary.get("eligible_repos", 0)),
         failing_repos=str(summary.get("failing_repos", 0)),
         archived_repos=str(summary.get("archived_repos", 0)),
         failing_list=failing_list,
         rows="\n".join(row_lines),
+        threshold=f"{thresholds.get('compliance', 0.8):.2f}",
+        drift_threshold=f"{thresholds.get('drift', 0.05):.2f}",
+        health_threshold=f"{thresholds.get('health', 0.9):.2f}",
     )
 
 
-def render_dashboard(input_path: str, md_out: str, html_out: str) -> float:
+def render_dashboard(
+    input_path: str,
+    md_out: str,
+    html_out: str,
+    thresholds: dict[str, float] | None = None,
+) -> tuple[float, dict[str, float]]:
     payload = json.loads(Path(input_path).read_text(encoding="utf-8"))
     compliance_rate, rows, summary = compute_compliance(payload)
+    metrics = compute_metrics(payload)
     date_str = payload.get("generated_at") or "-"
-    md = render_markdown(date_str, compliance_rate, rows, summary)
-    html = render_html(date_str, compliance_rate, rows, summary)
+    thresholds = thresholds or {"compliance": 0.8, "drift": 0.05, "health": 0.9}
+    md = render_markdown(date_str, compliance_rate, rows, summary, metrics)
+    html = render_html(date_str, compliance_rate, rows, summary, metrics, thresholds)
     md_path = Path(md_out)
     html_path = Path(html_out)
     md_path.parent.mkdir(parents=True, exist_ok=True)
@@ -201,4 +273,10 @@ def render_dashboard(input_path: str, md_out: str, html_out: str) -> float:
         compliance_rate,
         summary.get("total_repos", 0),
     )
-    return compliance_rate
+    _update_metrics(
+        html_path.parent / "metrics.json",
+        date_str,
+        compliance_rate,
+        metrics,
+    )
+    return compliance_rate, metrics
