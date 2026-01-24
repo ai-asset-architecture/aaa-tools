@@ -11,6 +11,7 @@ except Exception:  # pragma: no cover - fallback when typer isn't available
     typer = None
 
 from . import check_commands
+from . import audit_commands
 from . import init_commands
 from . import pack_commands
 from . import governance_commands
@@ -204,6 +205,17 @@ if typer:
         payload = pack_commands.list_packs(Path.cwd())
         typer.echo(json.dumps(payload, ensure_ascii=True))
 
+    @app.command("audit")
+    def audit(
+        local: bool = typer.Option(False, "--local", help="Audit current repo"),
+        output: Path = typer.Option(..., "--output", help="Output JSON path"),
+    ):
+        """Generate governance audit report."""
+        if not local:
+            raise typer.Exit(code=2)
+        payload = audit_commands.run_local_audit(Path.cwd())
+        output.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
 
 def sync_skills(target: str = "codex"):
     """Sync skills to the specified target."""
@@ -375,6 +387,10 @@ def _run_fallback() -> int:
     pack_sub = pack_parser.add_subparsers(dest="pack_command")
     pack_sub.add_parser("list")
 
+    audit_parser = subparsers.add_parser("audit")
+    audit_parser.add_argument("--local", action="store_true")
+    audit_parser.add_argument("--output", required=True)
+
     args = parser.parse_args()
     if args.version:
         print("aaa-tools 0.1.0")
@@ -488,6 +504,13 @@ def _run_fallback() -> int:
             payload = pack_commands.list_packs(Path.cwd())
             print(json.dumps(payload, ensure_ascii=True))
             return 0
+
+    if args.command == "audit":
+        if not args.local:
+            return 2
+        payload = audit_commands.run_local_audit(Path.cwd())
+        Path(args.output).write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+        return 0
 
     if args.command == "ops":
         if args.ops_command == "render-dashboard":
