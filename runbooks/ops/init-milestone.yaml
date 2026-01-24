@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "id": "ops/init-milestone",
+    "version": "1.0.0",
+    "source": "local",
+    "checksum": "sha256:db87ea4622912082fe746c8289663861fcd1b789313d1a60d9e49b4cb5b13a46",
+    "requires_engine": ">=0.5.0"
+  },
+  "contract": {
+    "inputs": [
+      {
+        "name": "milestone_id",
+        "type": "string"
+      },
+      {
+        "name": "title",
+        "type": "string"
+      },
+      {
+        "name": "summary_zh",
+        "type": "string"
+      },
+      {
+        "name": "summary_en",
+        "type": "string"
+      },
+      {
+        "name": "owner",
+        "type": "string"
+      },
+      {
+        "name": "definition_path",
+        "type": "string"
+      }
+    ],
+    "preconditions": [],
+    "outputs": [],
+    "required_scopes": [
+      "fs:write",
+      "gov:index",
+      "notify:send"
+    ],
+    "timeout_seconds": 120,
+    "idempotency_check": {
+      "command": "test -f {{inputs.definition_path}}",
+      "expect_exit_code": 0
+    },
+    "error_codes": []
+  },
+  "observability": {
+    "emit_events": true,
+    "audit_artifacts": [],
+    "failure_modes": [],
+    "declared_side_effects": [
+      "create_definition",
+      "update_indexes"
+    ]
+  },
+  "steps": [
+    {
+      "name": "write_definition",
+      "action": "fs_write",
+      "args": [
+        "path",
+        "{{inputs.definition_path}}",
+        "content",
+        "---\nsummary_zh: '{{inputs.summary_zh}}'\nsummary_en: '{{inputs.summary_en}}'\nstatus: Planned\nowner: {{inputs.owner}}\n---\n\n# {{inputs.title}}\n\n## Goal\nTBD\n\n## Key Deliverables\n- TBD\n"
+      ]
+    },
+    {
+      "name": "update_milestones_index",
+      "action": "governance.update_index",
+      "args": [
+        "--target-dir",
+        "aaa-tpl-docs/milestones",
+        "--pattern",
+        "*.md",
+        "--template",
+        "## Milestones Index\n\n| File | Title | Summary (ZH-TW) | Summary (EN) |\n| --- | --- | --- | --- |\n{{ range files }}| {{ .Path }} | {{ .Title }} | {{ .Metadata.summary_zh }} | {{ .Metadata.summary_en }} |\n{{ end }}",
+        "--index-output",
+        "index.json",
+        "--metadata-field",
+        "summary_zh",
+        "--metadata-field",
+        "summary_en"
+      ]
+    },
+    {
+      "name": "notify_humans",
+      "action": "notify",
+      "args": [
+        "channel",
+        "milestone",
+        "message",
+        "Milestone {{inputs.milestone_id}} initialized. Definition: {{inputs.definition_path}}"
+      ]
+    }
+  ]
+}
