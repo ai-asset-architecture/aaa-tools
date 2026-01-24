@@ -17,6 +17,7 @@ from . import pack_commands
 from . import governance_commands
 from . import runbook_registry
 from . import runbook_runtime
+from .utils import version_check
 from .action_registry import RuntimeSecurityError
 
 if typer:
@@ -126,6 +127,7 @@ if typer:
         version: bool = typer.Option(False, "--version", help="Show version.", is_eager=True, callback=_version_callback)
     ):
         """AAA tools CLI."""
+        version_check.schedule_update_hint()
         return
 
 
@@ -414,6 +416,8 @@ def _run_fallback() -> int:
     if args.version:
         print("aaa-tools 0.1.0")
         return 0
+
+    version_check.schedule_update_hint()
 
     if args.command == "sync":
         if args.sync_command == "skills":
