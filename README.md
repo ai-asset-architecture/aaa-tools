@@ -8,6 +8,7 @@ Owned by the tools maintainers. See `CODEOWNERS` (to be added).
 
 ## Versioning / Release
 CLI releases are tagged with `vX.Y.Z`. The recommended install method should pin to a released version.
+Run the release verification script before tagging to ensure the tag matches the installed CLI and packaged submodules.
 
 ## How to Consume / Use
 Install the `aaa` CLI and use it to sync skills, lint docs, and run evals.
@@ -58,6 +59,13 @@ Update to a newer version by re-running the install command with a newer tag:
 
 ```bash
 python3 -m pip install --upgrade "git+https://github.com/ai-asset-architecture/aaa-tools.git@v0.7.1"
+```
+
+## Release Verification (Required)
+Run this before creating or updating a release tag:
+
+```bash
+./scripts/release-verify.sh vX.Y.Z
 ```
 
 ## CLI 背景與使用說明
