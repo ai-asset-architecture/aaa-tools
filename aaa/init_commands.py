@@ -76,6 +76,9 @@ ERROR_REPO_CHECKS_FAILED = 44
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+DEFAULT_GATE_WORKFLOW = (
+    "ai-asset-architecture/aaa-actions/.github/workflows/reusable-gate.yaml@main"
+)
 
 
 @dataclass
@@ -127,6 +130,20 @@ def _repo_type_from_plan(repo: dict[str, Any]) -> str:
     value = repo.get("repo_type") or repo.get("type") or "all"
     repo_type = str(value).strip()
     return repo_type if repo_type else "all"
+
+
+def _write_gate_workflow(repo_root: Path, workflow_ref: str) -> None:
+    workflows_dir = repo_root / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+    content = (
+        "name: aaa-gate\n"
+        "on:\n"
+        "  pull_request:\n"
+        "jobs:\n"
+        "  governance-gate:\n"
+        f"    uses: {workflow_ref}\n"
+    )
+    (workflows_dir / "aaa-gate.yaml").write_text(content, encoding="utf-8")
 
 
 def _upsert_repo_type_index(target_dir: Path, repo_type: str) -> None:
@@ -1551,3 +1568,15 @@ def repo_checks(
             "repo checks failed",
             {"failures": failed},
         )
+
+
+@init_app.command("enterprise")
+def enterprise(
+    repo_type: str = typer.Option(..., "--repo-type"),
+    plan_ref: str = typer.Option("enterprise", "--plan-ref"),
+):
+    repo_root = Path(os.environ.get("AAA_ENTERPRISE_ROOT", str(Path.cwd())))
+    repo_root.mkdir(parents=True, exist_ok=True)
+    workflow_ref = os.environ.get("AAA_GATE_WORKFLOW", DEFAULT_GATE_WORKFLOW)
+    _write_gate_workflow(repo_root, workflow_ref)
+    write_repo_metadata(repo_root, repo_type, plan_ref)

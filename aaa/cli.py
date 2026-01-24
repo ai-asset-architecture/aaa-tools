@@ -358,6 +358,10 @@ def _run_fallback() -> int:
     repo_checks_parser.add_argument("--log-dir")
     repo_checks_parser.add_argument("--dry-run", action="store_true")
 
+    enterprise_parser = init_sub.add_parser("enterprise")
+    enterprise_parser.add_argument("--repo-type", required=True)
+    enterprise_parser.add_argument("--plan-ref", default="enterprise")
+
     run_parser = subparsers.add_parser("run")
     run_sub = run_parser.add_subparsers(dest="run_command")
     runbook_parser = run_sub.add_parser("runbook")
@@ -477,6 +481,12 @@ def _run_fallback() -> int:
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
+            )
+            return 0
+        if args.init_command == "enterprise":
+            init_commands.enterprise(
+                repo_type=args.repo_type,
+                plan_ref=args.plan_ref,
             )
             return 0
 
