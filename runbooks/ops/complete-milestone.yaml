@@ -3,7 +3,7 @@
     "id": "ops/complete-milestone",
     "version": "1.0.0",
     "source": "local",
-    "checksum": "sha256:dc4931403b5184ce6796d2f6b8cd6f61a41ae95669ffe878cfd6389906d77895",
+    "checksum": "sha256:5b671755ab59347ecf6b5a53ccdfe6fbcdb75b5c3f852ae0ffdd7df01f6c41f5",
     "requires_engine": ">=0.5.0"
   },
   "contract": {

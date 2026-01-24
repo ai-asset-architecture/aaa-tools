@@ -3,7 +3,7 @@
     "id": "ops/init-milestone",
     "version": "1.0.0",
     "source": "local",
-    "checksum": "sha256:db87ea4622912082fe746c8289663861fcd1b789313d1a60d9e49b4cb5b13a46",
+    "checksum": "sha256:fbe63ff0e7e5ca633eb622441a063635e13ca334ec4a7f75cb5ec72947acbd74",
     "requires_engine": ">=0.5.0"
   },
   "contract": {

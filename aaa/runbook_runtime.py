@@ -1,6 +1,7 @@
 import json
 import re
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,8 @@ def _default_registry() -> ActionRegistry:
     registry.register("fs_update_frontmatter", _fs_update_frontmatter, scopes=["fs:write"])
     registry.register("governance.update_index", _governance_update_index, scopes=["gov:index"])
     registry.register("aaa_evals.run", _aaa_evals_run, scopes=["eval:run"])
+    registry.register("aaa_cli", _aaa_cli, scopes=["repo:read", "repo:write"])
+    registry.register("gh_cli", _gh_cli, scopes=["repo:read", "repo:write"])
     return registry
 
 
@@ -86,6 +89,26 @@ def _aaa_evals_run(args: Any) -> dict[str, Any]:
     command = ["python3", "-m", "aaa.cli", "eval", suite]
     result = subprocess.run(command, capture_output=True, text=True, check=False)
     return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
+
+
+def _aaa_cli(args: Any) -> dict[str, Any]:
+    return _run_cli_command([sys.executable, "-m", "aaa.cli"], args)
+
+
+def _gh_cli(args: Any) -> dict[str, Any]:
+    return _run_cli_command(["gh"], args)
+
+
+def _run_cli_command(command: list[str], args: Any) -> dict[str, Any]:
+    cli_args = _args_to_list(args)
+    full_command = command + cli_args
+    result = subprocess.run(full_command, capture_output=True, text=True, check=False)
+    return {
+        "returncode": result.returncode,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "command": " ".join(full_command),
+    }
 
 
 def _render_args(args: Any, inputs: dict[str, Any], steps: list[dict[str, Any]]) -> Any:
@@ -151,6 +174,17 @@ def _args_to_dict(args: list[str]) -> dict[str, Any]:
             value = ""
         result[key] = value
     return result
+
+
+def _args_to_list(args: Any) -> list[str]:
+    if isinstance(args, list):
+        return [str(item) for item in args]
+    if isinstance(args, dict):
+        flattened: list[str] = []
+        for key, value in args.items():
+            flattened.extend([str(key), str(value)])
+        return flattened
+    return []
 
 
 def _parse_flag_args(args: Any) -> dict[str, Any]:

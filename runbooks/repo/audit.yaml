@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "id": "repo/audit",
+    "version": "1.0.0",
+    "source": "local",
+    "checksum": "sha256:12cfed109e6dc00cdc647192a03491956d095882c8c09f6e28807a4faf32524f",
+    "requires_engine": ">=0.5.0"
+  },
+  "contract": {
+    "inputs": [
+      {
+        "name": "output_path",
+        "type": "string"
+      }
+    ],
+    "preconditions": [],
+    "outputs": [],
+    "required_scopes": [
+      "repo:read"
+    ],
+    "timeout_seconds": 300,
+    "idempotency_check": {
+      "command": "test -f {{inputs.output_path}}",
+      "expect_exit_code": 0
+    },
+    "error_codes": []
+  },
+  "observability": {
+    "emit_events": true,
+    "audit_artifacts": [
+      "{{inputs.output_path}}"
+    ],
+    "failure_modes": [],
+    "declared_side_effects": [
+      "write_audit_report"
+    ]
+  },
+  "steps": [
+    {
+      "name": "run_local_audit",
+      "action": "aaa_cli",
+      "args": [
+        "audit",
+        "--local",
+        "--output",
+        "{{inputs.output_path}}"
+      ]
+    }
+  ]
+}

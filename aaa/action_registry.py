@@ -28,12 +28,11 @@ class ActionRegistry:
         spec = self._actions.get(name)
         if spec is None:
             raise ValueError(f"unsupported action: {name}")
-        if allowed_scopes is not None:
-            missing = [scope for scope in spec.scopes if scope not in allowed_scopes]
-            if missing:
+        if allowed_scopes is not None and spec.scopes:
+            if not any(scope in allowed_scopes for scope in spec.scopes):
                 raise RuntimeSecurityError(
                     "SCOPE_VIOLATION",
-                    f"missing scopes: {', '.join(missing)}",
-                    {"missing": missing, "allowed": allowed_scopes},
+                    "missing required scope",
+                    {"allowed": allowed_scopes, "required_any_of": spec.scopes},
                 )
         return spec.handler(args)

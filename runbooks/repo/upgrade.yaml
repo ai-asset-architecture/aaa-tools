@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "id": "repo/upgrade",
+    "version": "1.0.0",
+    "source": "local",
+    "checksum": "sha256:4dc5dca7e73564a88995e7c5a749c24fe2dd1644a1c60d8a8e13471d199cfc39",
+    "requires_engine": ">=0.5.0"
+  },
+  "contract": {
+    "inputs": [
+      {
+        "name": "org",
+        "type": "string"
+      },
+      {
+        "name": "plan_path",
+        "type": "string"
+      },
+      {
+        "name": "aaa_tag",
+        "type": "string"
+      },
+      {
+        "name": "jsonl",
+        "type": "string"
+      },
+      {
+        "name": "log_dir",
+        "type": "string"
+      },
+      {
+        "name": "dry_run",
+        "type": "string"
+      }
+    ],
+    "preconditions": [],
+    "outputs": [],
+    "required_scopes": [
+      "repo:write"
+    ],
+    "timeout_seconds": 600,
+    "idempotency_check": {
+      "command": "aaa init apply-templates --org {{inputs.org}} --from-plan {{inputs.plan_path}} --aaa-tag {{inputs.aaa_tag}} --dry-run",
+      "expect_exit_code": 0
+    },
+    "error_codes": []
+  },
+  "observability": {
+    "emit_events": true,
+    "audit_artifacts": [],
+    "failure_modes": [],
+    "declared_side_effects": [
+      "apply_templates"
+    ]
+  },
+  "steps": [
+    {
+      "name": "apply_templates",
+      "action": "aaa_cli",
+      "args": [
+        "init",
+        "apply-templates",
+        "--org",
+        "{{inputs.org}}",
+        "--from-plan",
+        "{{inputs.plan_path}}",
+        "--aaa-tag",
+        "{{inputs.aaa_tag}}",
+        "--jsonl",
+        "{{inputs.jsonl}}",
+        "--log-dir",
+        "{{inputs.log_dir}}",
+        "--dry-run",
+        "{{inputs.dry_run}}"
+      ]
+    }
+  ]
+}
