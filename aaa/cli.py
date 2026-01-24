@@ -18,6 +18,7 @@ from . import governance_commands
 from . import runbook_registry
 from . import runbook_runtime
 from .utils import version_check
+from . import outdated as outdated_commands
 from .action_registry import RuntimeSecurityError
 
 if typer:
@@ -284,6 +285,17 @@ if typer:
 
 
 if typer:
+    @app.command("outdated")
+    def outdated(json_output: bool = typer.Option(False, "--json", help="Output JSON report")):
+        """Report outdated AAA components."""
+        report = outdated_commands.build_outdated_report(Path.cwd())
+        if json_output:
+            typer.echo(json.dumps(report, ensure_ascii=True, indent=2))
+            return
+        typer.echo(outdated_commands.render_outdated_report(report))
+
+
+if typer:
     sync_typer = typer.Typer(no_args_is_help=True)
     sync_typer.command("skills")(sync_skills)
     sync_typer.command("workflows")(sync_workflows)
@@ -411,6 +423,9 @@ def _run_fallback() -> int:
     audit_parser = subparsers.add_parser("audit")
     audit_parser.add_argument("--local", action="store_true")
     audit_parser.add_argument("--output", required=True)
+
+    outdated_parser = subparsers.add_parser("outdated")
+    outdated_parser.add_argument("--json", action="store_true")
 
     args = parser.parse_args()
     if args.version:
@@ -578,6 +593,14 @@ def _run_fallback() -> int:
         result = check_commands.run_blocking_check(Path.cwd())
         print(json.dumps(result, ensure_ascii=True))
         return result["exit_code"]
+
+    if args.command == "outdated":
+        report = outdated_commands.build_outdated_report(Path.cwd())
+        if args.json:
+            print(json.dumps(report, ensure_ascii=True, indent=2))
+            return 0
+        print(outdated_commands.render_outdated_report(report))
+        return 0
 
     if args.command == "run":
         if args.run_command == "runbook":
