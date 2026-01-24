@@ -32,6 +32,9 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 - `aaa init repo-checks` - run governance repo checks
 - `aaa init --plan` - run full bootstrap from plan and emit report
 
+## Repo-checks Guide
+集中說明：`aaa-tpl-docs/docs/repo-checks-guide.md`
+
 ## Skills Source of Truth
 `aaa-tools/skills` is the source of truth for Codex/agent skills. Consumers should sync from this repo.
 
