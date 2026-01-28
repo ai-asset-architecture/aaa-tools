@@ -16,6 +16,7 @@ CHECKS = [
     "repo_type_consistency",
     "checks_manifest_alignment",
     "orphaned_assets",
+    "test_policy_compliance",
 ]
 
 
