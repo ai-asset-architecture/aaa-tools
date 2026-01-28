@@ -129,13 +129,25 @@ def complete_milestone(milestone_id: str, workspace_root: Path) -> Dict[str, Any
         if index_path.exists():
             data = json.loads(index_path.read_text())
             updated = False
-            for m in data.get("milestones", []):
-                if isinstance(m, dict) and m.get("id") == milestone_id:
+            milestones = data.get("milestones", [])
+            for i, m in enumerate(milestones):
+                if isinstance(m, str) and m == milestone_id:
+                    # Upgrade string to dict
+                    milestones[i] = {
+                        "id": milestone_id,
+                        "status": "completed",
+                        "completed_at": datetime.datetime.now().isoformat()
+                    }
+                    updated = True
+                    break
+                elif isinstance(m, dict) and m.get("id") == milestone_id:
                     m["status"] = "completed"
                     m["completed_at"] = datetime.datetime.now().isoformat()
                     updated = True
                     break
+            
             if updated:
+                data["milestones"] = milestones
                 index_path.write_text(json.dumps(data, indent=2))
                 
         return {

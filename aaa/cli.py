@@ -4,6 +4,7 @@ import shutil
 import sys
 from importlib import metadata
 from pathlib import Path
+from typing import Optional
 
 try:
     import typer
@@ -11,6 +12,7 @@ except Exception:  # pragma: no cover - fallback when typer isn't available
     typer = None
 
 from . import check_commands
+from . import output_formatter
 from . import audit_commands
 from . import init_commands
 from . import pack_commands
@@ -76,6 +78,7 @@ def run_runbook_impl(
     inputs: list[str] | None = None,
     json_output: bool = False,
     runbook_file: str | None = None,
+    output_format: str = "human",
 ) -> int:
     try:
         if runbook_file:
@@ -101,24 +104,26 @@ def run_runbook_impl(
         exit_code = 1
         path = None
 
-    if json_output:
-        output = json.dumps(response, ensure_ascii=True)
-        if typer:
-            typer.echo(output)
-        else:
-            print(output)
+    raw_result = {
+        "exit_code": exit_code,
+        "errors": [response["error_code"]] if response.get("status") == "error" else [],
+        "response": response,
+        "path": path,
+    }
+    
+    # Handle backward compatibility with --json
+    actual_format = "json" if json_output else output_format
+    
+    semantic_result = output_formatter.enrich_result("runbook", raw_result)
+    formatter = output_formatter.get_formatter(actual_format)
+    
+    output = formatter.format(semantic_result)
+    if typer:
+        typer.echo(output)
     else:
-        if path is not None:
-            if typer:
-                typer.echo(f"runbook executed: {path}")
-            else:
-                print(f"runbook executed: {path}")
-        else:
-            message = response.get("message", "")
-            if typer:
-                typer.echo(f"runbook error: {message}")
-            else:
-                print(f"runbook error: {message}")
+        print(output)
+        
+    return exit_code
     return exit_code
 
 
@@ -149,7 +154,8 @@ if typer:
     def run_runbook(
         spec: str | None = typer.Argument(None),
         inputs: list[str] | None = typer.Option(None, "--input"),
-        json_output: bool = typer.Option(False, "--json", help="Output JSON result"),
+        json_output: bool = typer.Option(False, "--json", help="Output JSON result (Legacy)"),
+        output_format: str = typer.Option("human", "--format", help="human|json|llm"),
         runbook_file: Path | None = typer.Option(None, "--runbook-file", help="Runbook JSON file"),
     ):
         """Run a runbook by id@version."""
@@ -158,6 +164,7 @@ if typer:
             inputs,
             json_output=json_output,
             runbook_file=str(runbook_file) if runbook_file else None,
+            output_format=output_format,
         )
         if exit_code:
             raise typer.Exit(code=exit_code)
@@ -224,13 +231,24 @@ if typer:
     @app.command("audit")
     def audit(
         local: bool = typer.Option(False, "--local", help="Audit current repo"),
-        output: Path = typer.Option(..., "--output", help="Output JSON path"),
+        output: Optional[Path] = typer.Option(None, "--output", help="Output JSON path"),
+        output_format: str = typer.Option("human", "--format", help="human|json|llm"),
     ):
         """Generate governance audit report."""
         if not local:
             raise typer.Exit(code=2)
+            
         payload = audit_commands.run_local_audit(Path.cwd())
-        output.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+        
+        # If output file is specified, always write JSON there (standard behavior)
+        if output:
+            output.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+            typer.echo(f"Audit report written to {output}")
+            
+        # Also print to stdout using the specified format
+        semantic_result = output_formatter.enrich_result("audit", payload)
+        formatter = output_formatter.get_formatter(output_format)
+        typer.echo(formatter.format(semantic_result))
 
 
 def sync_skills(target: str = "codex"):
@@ -267,14 +285,22 @@ if typer:
         typer.echo("lint stub")
 
     @app.command("check")
-    def check(mode: str = typer.Option("blocking", "--mode", help="blocking")):
+    def check(
+        mode: str = typer.Option("blocking", "--mode", help="blocking"),
+        output_format: str = typer.Option("human", "--format", help="human|json|llm"),
+    ):
         """Run governance checks for the current repo."""
         if mode != "blocking":
             raise typer.Exit(code=2)
-        result = check_commands.run_blocking_check(Path.cwd())
-        typer.echo(json.dumps(result, ensure_ascii=True))
-        if result["exit_code"]:
-            raise typer.Exit(code=result["exit_code"])
+            
+        raw_result = check_commands.run_blocking_check(Path.cwd())
+        semantic_result = output_formatter.enrich_result("check", raw_result)
+        
+        formatter = output_formatter.get_formatter(output_format)
+        typer.echo(formatter.format(semantic_result))
+        
+        if semantic_result.exit_code:
+            raise typer.Exit(code=semantic_result.exit_code)
 
 
 if typer:
@@ -396,11 +422,13 @@ def _run_fallback() -> int:
     runbook_parser = run_sub.add_parser("runbook")
     runbook_parser.add_argument("spec", nargs="?")
     runbook_parser.add_argument("--input", action="append")
-    runbook_parser.add_argument("--json", action="store_true")
+    runbook_parser.add_argument("--json", action="store_true", help="Output JSON result (Legacy)")
+    runbook_parser.add_argument("--format", dest="output_format", default="human", help="human|json|llm")
     runbook_parser.add_argument("--runbook-file")
 
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("--mode", default="blocking")
+    check_parser.add_argument("--format", dest="output_format", default="human", help="human|json|llm")
 
     governance_parser = subparsers.add_parser("governance")
     governance_sub = governance_parser.add_subparsers(dest="governance_command")
@@ -422,7 +450,8 @@ def _run_fallback() -> int:
 
     audit_parser = subparsers.add_parser("audit")
     audit_parser.add_argument("--local", action="store_true")
-    audit_parser.add_argument("--output", required=True)
+    audit_parser.add_argument("--output", help="Output JSON path")
+    audit_parser.add_argument("--format", dest="output_format", default="human", help="human|json|llm")
 
     outdated_parser = subparsers.add_parser("outdated")
     outdated_parser.add_argument("--json", action="store_true")
@@ -553,7 +582,12 @@ def _run_fallback() -> int:
         if not args.local:
             return 2
         payload = audit_commands.run_local_audit(Path.cwd())
-        Path(args.output).write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+        if args.output:
+            Path(args.output).write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+        
+        semantic_result = output_formatter.enrich_result("audit", payload)
+        formatter = output_formatter.get_formatter(args.output_format)
+        print(formatter.format(semantic_result))
         return 0
 
     if args.command == "ops":
@@ -583,6 +617,7 @@ def _run_fallback() -> int:
                 args.input,
                 json_output=args.json,
                 runbook_file=args.runbook_file,
+                output_format=args.output_format,
             )
             return exit_code
         parser.error("init requires a subcommand")
@@ -590,9 +625,11 @@ def _run_fallback() -> int:
     if args.command == "check":
         if args.mode != "blocking":
             return 2
-        result = check_commands.run_blocking_check(Path.cwd())
-        print(json.dumps(result, ensure_ascii=True))
-        return result["exit_code"]
+        raw_result = check_commands.run_blocking_check(Path.cwd())
+        semantic_result = output_formatter.enrich_result("check", raw_result)
+        formatter = output_formatter.get_formatter(args.output_format)
+        print(formatter.format(semantic_result))
+        return semantic_result.exit_code
 
     if args.command == "outdated":
         report = outdated_commands.build_outdated_report(Path.cwd())

@@ -43,6 +43,7 @@ def _run_repo_checks(repo_root: Path) -> list[str]:
         "AAA_CHECKS_MANIFEST",
         str(REPO_ROOT.parent / "aaa-actions" / "checks.manifest.json"),
     )
+    details_map: dict[str, Any] = {}
     for check in CHECKS:
         args = [sys.executable, str(runner), "--check", check, "--repo", str(repo_root)]
         if repo_type:
@@ -54,18 +55,27 @@ def _run_repo_checks(repo_root: Path) -> list[str]:
         try:
             payload = json.loads(result) if result else {}
         except json.JSONDecodeError:
-            payload = {}
+            payload = {"pass": False, "details": ["invalid_json_output"]}
+            
         if run_result.returncode != 0 or payload.get("pass") is not True:
-            errors.append(f"check_failed:{check}")
-    return errors
+            err_id = f"check_failed:{check}"
+            errors.append(err_id)
+            details_map[err_id] = payload.get("details", [])
+    return errors, details_map
 
 
 def run_blocking_check(repo_root: Path) -> dict[str, Any]:
     workflow_ref = os.environ.get("AAA_GATE_WORKFLOW", DEFAULT_GATE)
     errors: list[str] = []
+    details_map: dict[str, Any] = {}
+    
     if not verify_ci.has_reusable_gate(repo_root, workflow_ref):
         errors.append("missing_gate_workflow")
+        details_map["missing_gate_workflow"] = [f"Expected gate workflow {workflow_ref} not found in .github/workflows/"]
 
-    errors.extend(_run_repo_checks(repo_root))
+    check_errors, check_details = _run_repo_checks(repo_root)
+    errors.extend(check_errors)
+    details_map.update(check_details)
+    
     exit_code = 0 if not errors else 1
-    return {"exit_code": exit_code, "errors": errors}
+    return {"exit_code": exit_code, "errors": errors, "details": details_map}
