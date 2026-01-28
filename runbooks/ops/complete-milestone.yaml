@@ -4,11 +4,12 @@
     "version": "1.0.0",
     "source": "local",
     "requires_engine": ">=0.5.0",
-    "checksum": "sha256:8d2f084ed2abe6c7151e4c8b42cd7f517b34dd8357fd49416891742a665691e7"
+    "checksum": "sha256:df971c3ced4c201fd7f3235f079a8e471c5945e6495cef0e8154660bd993db8a"
   },
   "contract": {
     "required_scopes": [
-      "repo:write"
+      "repo:write",
+      "notify:send"
     ],
     "inputs": {
       "milestone_id": {
@@ -27,7 +28,15 @@
       "name": "notify_start",
       "action": "notify",
       "args": {
-        "message": "Completing milestone {{inputs.milestone_id}}..."
+        "message": "Completing milestone {{inputs.milestone_id}} with Evidence Collection..."
+      }
+    },
+    {
+      "name": "complete_milestone_action",
+      "action": "milestone.complete",
+      "args": {
+        "id": "{{inputs.milestone_id}}",
+        "workspace_root": "{{inputs.workspace_root}}"
       }
     }
   ]
