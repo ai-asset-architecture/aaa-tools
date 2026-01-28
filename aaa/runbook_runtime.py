@@ -8,6 +8,7 @@ from typing import Any
 
 from . import governance_index
 from .action_registry import ActionRegistry, RuntimeSecurityError
+from .ops import milestone_manager
 
 
 def execute_runbook(
@@ -34,7 +35,15 @@ def _default_registry() -> ActionRegistry:
     registry.register("aaa_evals.run", _aaa_evals_run, scopes=["eval:run"])
     registry.register("aaa_cli", _aaa_cli, scopes=["repo:read", "repo:write"])
     registry.register("gh_cli", _gh_cli, scopes=["repo:read", "repo:write"])
+    registry.register("milestone.init", _milestone_init, scopes=["repo:write"])
     return registry
+
+
+def _milestone_init(args: Any) -> dict[str, Any]:
+    payload = _payload_from_args(args)
+    milestone_id = payload.get("id", payload.get("milestone_id", ""))
+    workspace_root = Path(payload.get("workspace_root", Path.cwd()))
+    return milestone_manager.init_milestone(milestone_id, workspace_root)
 
 
 def _notify_stdout(args: Any) -> dict[str, Any]:
