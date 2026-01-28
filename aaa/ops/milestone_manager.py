@@ -5,23 +5,24 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 
-def get_git_author() -> str:
+def get_git_author(cwd: Path = None) -> str:
     try:
         result = subprocess.run(
             ["git", "config", "user.name"], 
             capture_output=True, 
             text=True, 
-            check=False
+            check=False,
+            cwd=cwd
         )
         return result.stdout.strip() or "Unknown Author"
     except Exception:
         return "Unknown Author"
 
-def get_git_logs(count: int = 50) -> str:
+def get_git_logs(cwd: Path = None, count: int = 50) -> str:
     try:
         # 獲取最近 N 筆 commits，過濾 feat/fix/docs
         cmd = ["git", "log", "-n", str(count), "--pretty=format:- %h: %s"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False, cwd=cwd)
         if result.returncode != 0:
             return "No git logs found or not a git repository."
         
@@ -48,7 +49,7 @@ def init_milestone(milestone_id: str, workspace_root: Path) -> Dict[str, Any]:
         
         if template_path.exists():
             content = template_path.read_text()
-            author = get_git_author()
+            author = get_git_author(cwd=workspace_root)
             today = datetime.date.today().isoformat()
             
             content = content.replace("<AUTHOR>", author)
@@ -98,7 +99,7 @@ def complete_milestone(milestone_id: str, workspace_root: Path) -> Dict[str, Any
     
     try:
         # 1. Evidence Collection (Git Logs)
-        git_logs = get_git_logs()
+        git_logs = get_git_logs(cwd=workspace_root)
         
         # 2. Render Completion Report
         today = datetime.date.today().isoformat()
