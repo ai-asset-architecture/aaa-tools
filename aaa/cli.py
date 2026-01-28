@@ -21,7 +21,9 @@ from . import runbook_registry
 from . import runbook_runtime
 from .utils import version_check
 from . import outdated as outdated_commands
+from . import outdated as outdated_commands
 from .action_registry import RuntimeSecurityError
+from .cmd import registry_commands
 
 if typer:
     app = typer.Typer(no_args_is_help=True)
@@ -148,7 +150,9 @@ if typer:
     run_typer = typer.Typer(no_args_is_help=True)
     governance_typer = typer.Typer(no_args_is_help=True)
     ops_typer = typer.Typer(no_args_is_help=True)
+    ops_typer = typer.Typer(no_args_is_help=True)
     pack_typer = typer.Typer(no_args_is_help=True)
+    registry_typer = registry_commands.app
 
     @run_typer.command("runbook")
     def run_runbook(
@@ -330,7 +334,9 @@ if typer:
     app.add_typer(run_typer, name="run")
     app.add_typer(governance_typer, name="governance")
     app.add_typer(ops_typer, name="ops")
+    app.add_typer(ops_typer, name="ops")
     app.add_typer(pack_typer, name="pack")
+    app.add_typer(registry_typer, name="registry")
 
 
 def _run_fallback() -> int:
