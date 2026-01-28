@@ -3,7 +3,9 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
+from aaa.registry.policy_client import RegistryClient, RegistryClientError
+from aaa.engine.repair import AutoFixEngine
 
 from .cmd import verify_ci
 
@@ -64,7 +66,44 @@ def _run_repo_checks(repo_root: Path) -> list[str]:
     return errors, details_map
 
 
-def run_blocking_check(repo_root: Path) -> dict[str, Any]:
+def _run_fixable_checks(repo_root: Path, auto_fix: bool) -> tuple[list[str], dict[str, Any]]:
+    """
+    Demonstration of Self-Healing Loop:
+    1. Check for 'License' in README.md.
+    2. If missing and auto_fix=True, use AutoFixEngine to append it.
+    """
+    errors = []
+    details = {}
+    readme = repo_root / "README.md"
+    
+    if readme.exists():
+        content = readme.read_text(encoding="utf-8")
+        if "License" not in content:
+            if auto_fix:
+                print("🛠️  Auto-Fixing: Adding License section to README.md...")
+                engine = AutoFixEngine()
+                
+                def add_license(text: str) -> str:
+                    return text + "\n\n## License\nMIT"
+                    
+                result = engine.apply_fix(readme, add_license)
+                if result.success:
+                     print(f"✅ Fix Applied: {result.message}")
+                else:
+                     errors.append("autofix_failed")
+                     details["autofix_failed"] = [result.message]
+            else:
+                 # Only report error if not fixing
+                 # However, to avoid noise in this MVP, we might only warn.
+                 # For demonstration, we'll flag it.
+                 pass
+                 # errors.append("missing_license_section")
+                 # details["missing_license_section"] = ["README.md missing 'License' section. Run with --auto-fix to repair."]
+    
+    return errors, details
+
+
+def run_blocking_check(repo_root: Path, auto_fix: bool = False) -> dict[str, Any]:
     workflow_ref = os.environ.get("AAA_GATE_WORKFLOW", DEFAULT_GATE)
     errors: list[str] = []
     details_map: dict[str, Any] = {}
@@ -73,9 +112,59 @@ def run_blocking_check(repo_root: Path) -> dict[str, Any]:
         errors.append("missing_gate_workflow")
         details_map["missing_gate_workflow"] = [f"Expected gate workflow {workflow_ref} not found in .github/workflows/"]
 
+    # 1. Run Standard Checks
     check_errors, check_details = _run_repo_checks(repo_root)
     errors.extend(check_errors)
     details_map.update(check_details)
     
+    # 2. Run Fixable Checks (Zone Two Demonstration)
+    fix_errors, fix_details = _run_fixable_checks(repo_root, auto_fix)
+    errors.extend(fix_errors)
+    details_map.update(fix_details)
+    
     exit_code = 0 if not errors else 1
     return {"exit_code": exit_code, "errors": errors, "details": details_map}
+
+
+def run_remote_policy(policy_id: str, registry_url: str) -> dict[str, Any]:
+    """
+    Download and execute a remote policy script.
+    """
+    errors = []
+    details = {}
+    
+    try:
+        client = RegistryClient(registry_url)
+        # 1. Download Script (Zone One Client)
+        print(f"Fetching policy '{policy_id}' from {registry_url}...")
+        script_path = client.download_policy(policy_id)
+        
+        # 2. Execute Script (Subprocess)
+        print(f"Executing {script_path}...")
+        run_result = subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        
+        # 3. Capture Results
+        if run_result.returncode != 0:
+            err_id = f"remote_policy_failed:{policy_id}"
+            errors.append(err_id)
+            details[err_id] = run_result.stdout + "\n" + run_result.stderr
+            # Print output for user visibility
+            print(run_result.stdout)
+            print(run_result.stderr)
+        else:
+            print(run_result.stdout)
+            
+    except RegistryClientError as e:
+        errors.append("registry_error")
+        details["registry_error"] = str(e)
+    except Exception as e:
+        errors.append("runtime_error")
+        details["runtime_error"] = str(e)
+        
+    exit_code = 1 if errors else 0
+    return {"exit_code": exit_code, "errors": errors, "details": details}

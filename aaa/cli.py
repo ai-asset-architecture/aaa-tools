@@ -292,12 +292,20 @@ if typer:
     def check(
         mode: str = typer.Option("blocking", "--mode", help="blocking"),
         output_format: str = typer.Option("human", "--format", help="human|json|llm"),
+        remote: Optional[str] = typer.Option(None, "--remote", help="Remote Policy ID to run"),
+        registry: str = typer.Option("file:///Users/imac/Documents/Code/AI-Lotto/AAA_WORKSPACE/aaa-policies", "--registry", help="Registry URL"),
+        auto_fix: bool = typer.Option(False, "--auto-fix", help="Attempt to automatically fix violations"),
     ):
-        """Run governance checks for the current repo."""
-        if mode != "blocking":
+        """Run governance checks (local or remote)."""
+        print(f"DEBUG: CLI check called. Mode={mode}, AutoFix={auto_fix}")
+        if remote:
+            # Remote Mode
+            raw_result = check_commands.run_remote_policy(remote, registry)
+        elif mode == "blocking":
+            # Normal Blocking Mode
+            raw_result = check_commands.run_blocking_check(Path.cwd(), auto_fix=auto_fix)
+        else:
             raise typer.Exit(code=2)
-            
-        raw_result = check_commands.run_blocking_check(Path.cwd())
         semantic_result = output_formatter.enrich_result("check", raw_result)
         
         formatter = output_formatter.get_formatter(output_format)
@@ -435,6 +443,9 @@ def _run_fallback() -> int:
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("--mode", default="blocking")
     check_parser.add_argument("--format", dest="output_format", default="human", help="human|json|llm")
+    check_parser.add_argument("--remote", help="Remote Policy ID")
+    check_parser.add_argument("--registry", default="file:///Users/imac/Documents/Code/AI-Lotto/AAA_WORKSPACE/aaa-policies")
+    check_parser.add_argument("--auto-fix", action="store_true")
 
     governance_parser = subparsers.add_parser("governance")
     governance_sub = governance_parser.add_subparsers(dest="governance_command")
@@ -629,9 +640,13 @@ def _run_fallback() -> int:
         parser.error("init requires a subcommand")
 
     if args.command == "check":
-        if args.mode != "blocking":
+        if args.remote:
+             raw_result = check_commands.run_remote_policy(args.remote, args.registry)
+        elif args.mode == "blocking":
+             raw_result = check_commands.run_blocking_check(Path.cwd(), auto_fix=args.auto_fix)
+        else:
             return 2
-        raw_result = check_commands.run_blocking_check(Path.cwd())
+            
         semantic_result = output_formatter.enrich_result("check", raw_result)
         formatter = output_formatter.get_formatter(args.output_format)
         print(formatter.format(semantic_result))
