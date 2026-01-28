@@ -25,6 +25,14 @@ except Exception:  # pragma: no cover - fallback when typer isn't available
             return default
 
     typer = _TyperShim()
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+from .compiler.schema import Policy, PolicyMetadata, Rule, CheckType, Severity, FileExistsCheck, ContentContainsCheck, JsonMatchCheck
+from .compiler.generator import Generator
 try:
     from jsonschema import Draft202012Validator
 except Exception:  # pragma: no cover - fallback when jsonschema isn't available
@@ -325,7 +333,7 @@ def _required_checks_from_plan(repo: dict[str, Any]) -> list[str]:
 
 
 def _aaa_version_from_plan(plan: dict[str, Any]) -> str:
-    return plan.get("aaa", {}).get("version_tag", "v0.1.0")
+    return plan.get("aaa", {}).get("version_tag", "v1.5.0")
 
 
 def _project_slug_from_plan(plan: dict[str, Any]) -> str:
@@ -460,7 +468,7 @@ class _ReportBuilder:
                     "gh": _tool_version("gh"),
                     "git": _tool_version("git"),
                     "python": _python_version(),
-                    "aaa": "aaa-tools 0.1.0",
+                    "aaa": "aaa-tools 1.5.0",
                 },
                 "network_access": {
                     "enabled": True,
@@ -1580,3 +1588,80 @@ def enterprise(
     workflow_ref = os.environ.get("AAA_GATE_WORKFLOW", DEFAULT_GATE_WORKFLOW)
     _write_gate_workflow(repo_root, workflow_ref)
     write_repo_metadata(repo_root, repo_type, plan_ref)
+
+@init_app.command("interactive")
+def interactive(
+    output_dir: Path = typer.Option(None, "--output-dir", help="Directory to save the policy"),
+):
+    """
+    Interactively create a Governance Policy.
+    """
+    if not _HAS_TYPER:
+        print("interactive mode requires typer")
+        raise SystemExit(1)
+        
+    typer.echo("AAA Governance Policy Wizard (v1.3)")
+    
+    name = typer.prompt("Policy Name", default="my-repo-policy")
+    version = typer.prompt("Version", default="1.0.0")
+    
+    rules = []
+    while True:
+        if not typer.confirm("Add a rule?", default=True):
+            break
+            
+        rule_id = typer.prompt("Rule ID (e.g. readme_exists)")
+        desc = typer.prompt("Description")
+        check_type = typer.prompt("Check Type (file_exists, content_contains, json_match)", default="file_exists")
+        
+        check = None
+        if check_type == "file_exists":
+            path = typer.prompt("File Path")
+            check = FileExistsCheck(path=path)
+        elif check_type == "content_contains":
+            path = typer.prompt("File Path")
+            pattern = typer.prompt("Pattern (Regex)")
+            check = ContentContainsCheck(path=path, pattern=pattern)
+        elif check_type == "json_match":
+            path = typer.prompt("File Path")
+            key_path = typer.prompt("Key Path (dotted)")
+            expected = typer.prompt("Expected Value")
+            check = JsonMatchCheck(path=path, key_path=key_path, expected_value=expected)
+        else:
+            typer.echo(f"Unknown check type: {check_type}")
+            continue
+        
+        severity = typer.prompt("Severity (blocking, high, medium, low)", default="high")
+        
+        rules.append(Rule(
+            id=rule_id, 
+            description=desc, 
+            severity=Severity(severity), 
+            check=check
+        ))
+    
+    policy = Policy(
+        metadata=PolicyMetadata(name=name, version=version),
+        rules=rules
+    )
+    
+    # Use cwd if not specified
+    target_dir = output_dir or Path.cwd()
+    target_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Save YAML
+    if yaml:
+        yaml_path = target_dir / f"{name}.yaml"
+        with open(yaml_path, "w") as f:
+            f.write(yaml.dump(policy.model_dump(mode='json', exclude_none=True), sort_keys=False))
+        typer.echo(f"Policy saved to {yaml_path}")
+    else:
+        typer.echo("pyyaml not installed, skipping YAML save.")
+    
+    # Compile
+    if typer.confirm("Compile to Python script now?", default=True):
+        script = Generator.generate(policy)
+        py_path = target_dir / f"check_{name.replace('-', '_')}.py"
+        py_path.write_text(script, encoding="utf-8")
+        typer.echo(f"Compiled script saved to {py_path}")
+

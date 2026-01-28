@@ -475,7 +475,7 @@ def _run_fallback() -> int:
 
     args = parser.parse_args()
     if args.version:
-        print("aaa-tools 0.1.0")
+        print("aaa-tools 1.5.0")
         return 0
 
     version_check.schedule_update_hint()
