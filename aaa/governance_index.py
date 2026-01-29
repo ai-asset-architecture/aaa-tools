@@ -109,18 +109,19 @@ def update_index(
     sort_by: str = "filename",
     hash_algo: str = "sha256",
     dry_run: bool = False,
+    allow_empty: bool = False,
 ) -> dict[str, Any]:
     directory = Path(target_dir)
     if not directory.exists() or not directory.is_dir():
         raise ValueError("target_dir must be an existing directory")
     files = sorted(directory.glob(pattern))
-    if not files:
+    if not files and not allow_empty:
         raise ValueError("no files matched pattern")
     readme = next((path for path in files if path.name == "README.md"), None)
     files = [path for path in files if path.name != "README.md"]
     if not files and readme is not None:
         files = [readme]
-    if not files:
+    if not files and not allow_empty:
         raise ValueError("no files matched pattern")
 
     metadata_fields = metadata_fields or []

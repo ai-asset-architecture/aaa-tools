@@ -11,6 +11,12 @@ from .action_registry import ActionRegistry, RuntimeSecurityError
 from .ops import milestone_manager
 
 
+class RunbookExecutionError(Exception):
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.details = details or {}
+
+
 def execute_runbook(
     runbook: dict[str, Any],
     inputs: dict[str, Any],
@@ -19,10 +25,25 @@ def execute_runbook(
     registry = registry or _default_registry()
     allowed_scopes = runbook.get("contract", {}).get("required_scopes")
     steps_output = []
-    for step in runbook.get("steps", []):
+    for index, step in enumerate(runbook.get("steps", [])):
+        step_name = step.get("name", "")
+        action = step.get("action", "")
         rendered_args = _render_args(step.get("args", []), inputs, steps_output)
-        output = registry.execute(step.get("action", ""), rendered_args, allowed_scopes)
-        steps_output.append({"name": step.get("name", ""), "output": output})
+        try:
+            output = registry.execute(action, rendered_args, allowed_scopes)
+        except Exception as exc:
+            raise RunbookExecutionError(
+                "runbook step failed",
+                {
+                    "step_index": index,
+                    "step": step_name,
+                    "action": action,
+                    "args": rendered_args,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+            ) from exc
+        steps_output.append({"name": step_name, "output": output})
     return {"steps": steps_output}
 
 
@@ -96,6 +117,7 @@ def _governance_update_index(args: Any) -> dict[str, Any]:
         readme_template=options.get("template", ""),
         index_output=options.get("index-output", "index.json"),
         metadata_fields=options.get("metadata-field", []),
+        allow_empty=_parse_bool(options.get("allow-empty", "false")),
     )
     return {"payload": payload}
 
@@ -227,6 +249,15 @@ def _parse_flag_args(args: Any) -> dict[str, Any]:
             continue
         idx += 1
     return result
+
+
+def _parse_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    text = str(value).strip().lower()
+    return text in {"1", "true", "yes", "y", "on"}
 
 
 def _parse_frontmatter_args(args: Any) -> tuple[Path, dict[str, str]]:

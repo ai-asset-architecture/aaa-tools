@@ -82,6 +82,15 @@ def run_runbook_impl(
     runbook_file: str | None = None,
     output_format: str = "human",
 ) -> int:
+    def _format_error_details(details: object) -> list[str]:
+        if details is None:
+            return []
+        if isinstance(details, list):
+            return [str(item) for item in details]
+        if isinstance(details, dict):
+            return [f"{key}={json.dumps(value, ensure_ascii=True)}" for key, value in details.items()]
+        return [str(details)]
+
     try:
         if runbook_file:
             path = Path(runbook_file)
@@ -101,6 +110,10 @@ def run_runbook_impl(
         response = {"status": "error", "error_code": exc.code, "message": exc.message, "details": exc.details}
         exit_code = 2
         path = None
+    except runbook_runtime.RunbookExecutionError as exc:
+        response = {"status": "error", "error_code": "RUNTIME_ERROR", "message": str(exc), "details": exc.details}
+        exit_code = 1
+        path = None
     except Exception as exc:
         response = {"status": "error", "error_code": "RUNTIME_ERROR", "message": str(exc), "details": {}}
         exit_code = 1
@@ -109,6 +122,7 @@ def run_runbook_impl(
     raw_result = {
         "exit_code": exit_code,
         "errors": [response["error_code"]] if response.get("status") == "error" else [],
+        "details": {response["error_code"]: _format_error_details(response.get("details"))} if response.get("status") == "error" else {},
         "response": response,
         "path": path,
     }
