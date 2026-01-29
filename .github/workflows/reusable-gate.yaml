@@ -24,3 +24,7 @@ jobs:
         run: aaa audit --local
         env:
             GITHUB_TOKEN: ${{ secrets.token }}
+  aaa-actions-gate:
+    uses: ai-asset-architecture/aaa-actions/.github/workflows/reusable-gate.yaml@v1
+    with:
+      working-directory: ${{ inputs.working-directory }}

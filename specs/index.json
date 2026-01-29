@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-24T05:43:54Z",
+  "generated_at": "2026-01-29T18:06:04Z",
   "source_dir": "aaa-tools/specs",
   "hash_algo": "sha256",
   "files": [
@@ -8,6 +8,13 @@
       "title": "CLI_CONTRACT.md \u2014 AAA Tools CLI Contract (v0.1)",
       "hash": "f5be4fef09e80d2277ae61e1ff127897067eb0859491b1c8c9a53a55f091f5df",
       "last_modified": "2026-01-22",
+      "metadata": {}
+    },
+    {
+      "path": "CLI_CONTROL_PLANE_CONTRACT.md",
+      "title": "Control Plane Command Contract (v1.1)",
+      "hash": "a7ce82817b31a14967627534a5896ee688fb94ff03f18f920da3f66b7202af2a",
+      "last_modified": "2026-01-29",
       "metadata": {}
     },
     {
@@ -27,8 +34,15 @@
     {
       "path": "v0.5-closing-protocol.md",
       "title": "v0.5 Closing Protocol (Complete-Milestone)",
-      "hash": "5acb2e7c493701318a3cd3d32e0765418d89c45c98e762f75d418872df562d81",
-      "last_modified": "2026-01-21",
+      "hash": "56597de813a8b90debba98df4ebd7d0a3b4338b7469e9bad73461ad75d52af48",
+      "last_modified": "2026-01-27",
+      "metadata": {}
+    },
+    {
+      "path": "v1.4-registry-standard.md",
+      "title": "Specification: aaa-policies Registry Standard (Zone Zero)",
+      "hash": "4acc6d74262e7fa1fb3313bf996696c8cdfb1bcb58d3922517a8efc1a4e99c64",
+      "last_modified": "2026-01-28",
       "metadata": {}
     }
   ]
