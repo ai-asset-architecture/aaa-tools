@@ -8,7 +8,7 @@
 - **Checks**:
     - Scans `milestones/`, `specs/`, and `internal/` for Ledger/Court event strings.
     - Verifies against `ledger_event_enum_v1.md` and `court_case_type_enum_v1.md`.
-    - Returns `EXIT_CODE 0` on success; `1` on drift.
+    - **Outcome**: Returns `EXIT_CODE 0` on success; `1` on drift. **Enum mismatch MUST fail-closed and block Release.** (Reason: `ERR_AUDIT_SCHEMA_MISSING`).
 
 ### `aaa check --evidence-index`
 - **Goal**: Validate the Release Gate Evidence Index.
@@ -20,15 +20,15 @@
 ## 2. Replay & Export
 ### `aaa export --evidence --version <ver>`
 - **Goal**: Generate a cryptographically signed Evidence Bundle.
-- **Contents**:
-    - `manifest.json` (hashes of all parts).
-    - `ledger_snapshot.json` (time-bound audit traces).
-    - `case_snapshot.json` (linked court rulings).
-    - `test_results.xml` (OMEGA verification output).
+- **Mandatory Contents**:
+    - `ledger_export.jsonl`: Time-bound audit traces.
+    - `policy_snapshot.json`: Policy hash and content at time of execution.
+    - `test_results.json`: OMEGA verification results for the session.
+    - `hash_chain.txt`: Verification hashes for all components.
 
 ### `aaa omega replay --bundle <path>`
 - **Goal**: Recreate the system state from an Evidence Bundle for audit verification.
-- **Outcome**: Deterministic confirmation of the original governance decision.
+- **Determinism Assertion**: Replay MUST reproduce identical decision hashes + reason codes. Mismatch triggers `AUDIT_CORRUPTION` case and `ERR_AUDIT_FAIL`.
 
 ---
 *Mechanical baseline for Project OMEGA*
