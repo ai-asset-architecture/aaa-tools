@@ -52,9 +52,3 @@ def run_local_audit(repo_root: Path) -> dict[str, Any]:
         ],
     }
     return payload
-
-
-def run_remote_audit(url: str) -> dict[str, Any]:
-    from .engine.federation import RemoteVerifier
-    verifier = RemoteVerifier()
-    return verifier.verify(url)

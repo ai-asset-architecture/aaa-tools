@@ -237,17 +237,14 @@ if typer:
     @app.command("audit")
     def audit(
         local: bool = typer.Option(False, "--local", help="Audit current repo"),
-        remote: Optional[str] = typer.Option(None, "--remote", help="Remote repo URL"),
         output: Optional[Path] = typer.Option(None, "--output", help="Output JSON path"),
         output_format: str = typer.Option("human", "--format", help="human|json|llm"),
     ):
         """Generate governance audit report."""
-        if local:
-            payload = audit_commands.run_local_audit(Path.cwd())
-        elif remote:
-            payload = audit_commands.run_remote_audit(remote)
-        else:
+        if not local:
             raise typer.Exit(code=2)
+            
+        payload = audit_commands.run_local_audit(Path.cwd())
         
         # If output file is specified, always write JSON there (standard behavior)
         if output:
@@ -476,7 +473,6 @@ def _run_fallback() -> int:
 
     audit_parser = subparsers.add_parser("audit")
     audit_parser.add_argument("--local", action="store_true")
-    audit_parser.add_argument("--remote", help="Remote repo URL")
     audit_parser.add_argument("--output", help="Output JSON path")
     audit_parser.add_argument("--format", dest="output_format", default="human", help="human|json|llm")
 
@@ -606,12 +602,9 @@ def _run_fallback() -> int:
             return 0
 
     if args.command == "audit":
-        if args.local:
-            payload = audit_commands.run_local_audit(Path.cwd())
-        elif args.remote:
-            payload = audit_commands.run_remote_audit(args.remote)
-        else:
+        if not args.local:
             return 2
+        payload = audit_commands.run_local_audit(Path.cwd())
         if args.output:
             Path(args.output).write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
         
