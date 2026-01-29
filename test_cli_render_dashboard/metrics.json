@@ -82,5 +82,29 @@
     "compliance_rate": 1.0,
     "drift_rate": 0.0,
     "repo_health": 1.0
+  },
+  {
+    "date": "2026-01-24",
+    "compliance_rate": 1.0,
+    "drift_rate": 0.0,
+    "repo_health": 1.0
+  },
+  {
+    "date": "2026-01-24",
+    "compliance_rate": 1.0,
+    "drift_rate": 0.0,
+    "repo_health": 1.0
+  },
+  {
+    "date": "2026-01-24",
+    "compliance_rate": 1.0,
+    "drift_rate": 0.0,
+    "repo_health": 1.0
+  },
+  {
+    "date": "2026-01-24",
+    "compliance_rate": 1.0,
+    "drift_rate": 0.0,
+    "repo_health": 1.0
   }
 ]

@@ -1,5 +1,5 @@
 import json
-import os
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -84,6 +84,17 @@ class LockManager:
         del locks[rel_path]
         self._write_locks(locks)
         return True
+
+    @contextmanager
+    def lock(self, rel_path: str, owner: str, ttl_minutes: int = DEFAULT_TTL_MINUTES):
+        """Context manager for acquiring and releasing a lock."""
+        acquired = self.acquire(rel_path, owner, ttl_minutes)
+        if not acquired:
+            raise RuntimeError(f"Could not acquire lock on {rel_path} for {owner}")
+        try:
+            yield
+        finally:
+            self.release(rel_path, owner)
 
     def check_lock(self, rel_path: str) -> Optional[LockInfo]:
         """Check if a file is active locked. Returns None if free."""

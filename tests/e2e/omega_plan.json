@@ -1,0 +1,53 @@
+{
+    "plan_version": "0.1",
+    "aaa": {
+        "org": "ai-asset-architecture",
+        "version_tag": "v1.0.0",
+        "templates": {
+            "docs": "aaa-tpl-docs",
+            "service": "aaa-tpl-service",
+            "frontend": "aaa-tpl-frontend"
+        },
+        "actions_repo": "ai-asset-architecture/aaa-actions"
+    },
+    "target": {
+        "org": "omega-org",
+        "project_slug": "omega-project",
+        "visibility": "public",
+        "default_branch": "main",
+        "mode": "pr"
+    },
+    "repos": [
+        {
+            "name": "omega-repo",
+            "type": "docs",
+            "template": "aaa-tpl-docs",
+            "description": "Omega E2E Test Repo",
+            "owners": [
+                "omega-agent"
+            ],
+            "required_checks": [
+                "lint",
+                "test",
+                "eval"
+            ]
+        }
+    ],
+    "steps": [
+        {
+            "id": "verify_init",
+            "type": "verify",
+            "description": "Verify initialization",
+            "commands": [
+                "echo 'Init starting'"
+            ]
+        }
+    ],
+    "reporting": {
+        "output_schema_path": "specs/report.schema.json",
+        "required_fields": [
+            "status",
+            "artifacts"
+        ]
+    }
+}
