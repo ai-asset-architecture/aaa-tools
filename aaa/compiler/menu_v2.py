@@ -94,14 +94,14 @@ def _parse_packs_list(content: str) -> Dict[str, Any]:
         if current_pack_id and chunk.startswith("- ["):
             # Parse checkbox items: - [x] **Sandbox**: Prevents...
             for line in chunk.splitlines():
-                cap_match = re.match(r"- \[[ xX]\].*?\*\*(.*?)\*\*: (.*)", line)
+                cap_match = re.match(r"- \[[xX]\].*?\*\*(.*?)\*\*: (.*)", line)
                 if cap_match:
                     rule_name = cap_match.group(1)
                     desc = cap_match.group(2)
                     packs[current_pack_id]["capabilities"].append(f"{rule_name}: {desc}")
                 else:
                     # Simple item
-                    simple_match = re.match(r"- \[[ xX]\].*?(.*)", line)
+                    simple_match = re.match(r"- \[[xX]\].*?(.*)", line)
                     if simple_match:
                          packs[current_pack_id]["capabilities"].append(simple_match.group(1).strip())
                          

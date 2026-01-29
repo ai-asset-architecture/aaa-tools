@@ -153,6 +153,8 @@ if typer:
     ops_typer = typer.Typer(no_args_is_help=True)
     pack_typer = typer.Typer(no_args_is_help=True)
     registry_typer = registry_commands.app
+    from .cmd import lock_commands
+    lock_typer = lock_commands.app
 
     @run_typer.command("runbook")
     def run_runbook(
@@ -345,8 +347,10 @@ if typer:
     app.add_typer(ops_typer, name="ops")
     app.add_typer(ops_typer, name="ops")
     app.add_typer(ops_typer, name="ops")
+    app.add_typer(ops_typer, name="ops")
     app.add_typer(pack_typer, name="pack")
     app.add_typer(registry_typer, name="registry")
+    app.add_typer(lock_typer, name="lock")
 
 
 def _run_fallback() -> int:
