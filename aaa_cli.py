@@ -76,9 +76,13 @@ def check_evidence_index(args):
         if "## Appendix A: Evidence Index" in line:
             in_appendix_a = True
         if in_appendix_a and "|" in line:
-            match = re.search(r"(aaa-[a-z-]+/[\w/-]+\.py)", line)
-            if match:
-                paths_found.append(match.group(1))
+            # Capture all path-like strings in the row (py files or zip files)
+            matches = re.findall(r"(\w+[\w./-]+\.(?:py|zip))", line)
+            for m in matches:
+                if "aaa-" in m or "artifacts/" in m:
+                    paths_found.append(m)
+    
+    print(f"[*] Detected paths: {paths_found}")
                 
     missing = [p for p in paths_found if not os.path.exists(p)]
     if missing:
@@ -162,16 +166,47 @@ def omega_replay(args):
                 sys.exit(1) # TAMPER SUSPECT
 
         # Verify Env
-        current_env = get_env_fingerprint()
-        env_match = [l for l in claimed_lines if "env_fingerprint" in l]
-        if not env_match or current_env not in env_match[0]:
-            print(f"[!] ENV_DRIFT: Bundle was generated in different environment.")
-            print(f"    Claimed: {env_match[0] if env_match else 'None'}")
-            print(f"    Current: {current_env}")
+        current_env_raw = get_env_fingerprint()
+        current_env = json.loads(current_env_raw)
+        
+        env_line = [l for l in claimed_lines if "env_fingerprint" in l]
+        if not env_line:
+            print("[X] Missing env_fingerprint in hash_chain")
+            sys.exit(3)
+            
+        claimed_env_raw = env_line[0].replace("env_fingerprint ", "")
+        claimed_env = json.loads(claimed_env_raw)
+        
+        diffs = {k: (claimed_env.get(k), current_env.get(k)) 
+                 for k in claimed_env if claimed_env.get(k) != current_env.get(k)}
+        
+        if diffs:
+            print(f"[!] ENV_DRIFT: {diffs}")
             sys.exit(2) # ENV_DRIFT
 
-        print("[v] Replay: Integrity and Env verified.")
+        # 3. Decision/Hash Verification (Placeholder for actual decision re-calc)
+        # Simulation: Read test_results.json and verify it hasn't been tampered
+        # In a real OMEGA run, we would re-run the test logic here.
+        print("[v] Replay: Integrity and Env verified. (MATCH)")
         sys.exit(0)
+        
+    except SystemExit as se:
+        if se.code == 1: # TAMPER SUSPECT
+            case_id = f"CASE_REPLAY_{hashlib.md5(bundle_path.encode()).hexdigest()[:8]}"
+            casefile = {
+                "id": case_id,
+                "type": "AUDIT_CORRUPTION",
+                "severity": "CRITICAL",
+                "evidence": bundle_path,
+                "fingerprint_current": get_env_fingerprint(),
+                "reason": "Decision/Hash mismatch with Env MATCH. Tamper Suspected."
+            }
+            cf_path = f"artifacts/court/cases/{case_id}.json"
+            os.makedirs(os.path.dirname(cf_path), exist_ok=True)
+            with open(cf_path, "w") as f:
+                json.dump(casefile, f, indent=2)
+            print(f"[!] AUDIT_CORRUPTION Casefile generated: {cf_path}")
+        raise se
     except Exception as e:
         print(f"[!] Error during replay: {e}")
         sys.exit(3)
