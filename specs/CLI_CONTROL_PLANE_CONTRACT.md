@@ -1,4 +1,4 @@
-# Control Plane Command Contract (v1.0)
+# Control Plane Command Contract (v1.1)
 
 > **Purpose**: Definitive CLI interface for the AAA Governance Control Plane (aaa-tools).
 
@@ -19,20 +19,26 @@
 
 ### `aaa export --evidence --version <ver>`
 - **Goal**: Generate a cryptographically signed Evidence Bundle.
-- **Mandatory Contents**:
+- **Mandatory Contents** (Core 5 Files):
+    - `case_snapshot.json`: Linked court rulings/precedents.
     - `ledger_export.jsonl`: Time-bound audit traces.
     - `policy_snapshot.json`: Policy hash and content at time of execution.
     - `test_results.json`: OMEGA verification results for the session.
-    - `hash_chain.txt`: Ordered Sha256 hashes of core files + `env_fingerprint`.
-- **Packaging**: Container MAY be a `zip`. If zipped, core files MUST stay at zip root.
-- **Ordering Rule**: Lexical filename order for hashing + `env_fingerprint` fields.
+    - `hash_chain.txt`: Ordered Sha256 hashes of the above files + `env_fingerprint`.
+- **Packaging**: Container MUST be a `zip`. Core files MUST stay at zip root.
+- **Ordering Rule**: Lexical filename order for hashing + `env_fingerprint` footer.
+- **Fingerprint Canonicalization**: `env_fingerprint` MUST be **Canonical JSON** (Sorted Keys, No Whitespace, UTF-8).
 
 ### `aaa omega replay --bundle <path>`
 - **Goal**: Recreate the system state from an Evidence Bundle.
-- **env_fingerprint fields**: `os_v, arch, py_v, aaa_v, policy_hash, capability_pack_hash`.
+- **Exit Codes**:
+    - `0`: Success (Decision/Hash/Env all MATCH).
+    - `1`: **AUDIT_CORRUPTION** (Env MATCH, but Hash/Decision mismatch -> TAMPER SUSPECT).
+    - `2`: **ENV_DRIFT** (Env mismatch -> Inconclusive Replay).
+    - `3`: **BUNDLE_INVALID** (Missing core files or malformed hash_chain).
 - **Audit Split**: 
-    - Decision/Hash Mismatch -> `AUDIT_CORRUPTION` (Severity: CRITICAL). 
-    - Case metadata MUST include `env_fingerprint` comparison to distinguish **Environment Drift** from **Evidence Tampering**.
+    - Decision/Hash Mismatch triggers `AUDIT_CORRUPTION` case. 
+    - Case metadata MUST include `env_fingerprint` comparison result.
 
 ---
 *Mechanical baseline for Project OMEGA*
