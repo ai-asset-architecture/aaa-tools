@@ -12,6 +12,8 @@ import re
 import hashlib
 import platform
 import zipfile
+from aaa.trust.identity import AgentIdentity
+from aaa.trust.capability import DEFAULT_PACK
 
 # --- Canonical Enums & Files ---
 LEDGER_ENUM_FILE = "aaa-tpl-docs/specs/ledger_event_enum_v1.md"
@@ -27,9 +29,9 @@ def get_env_fingerprint():
         "os_v": platform.platform(),
         "arch": platform.machine(),
         "py_v": platform.python_version(),
-        "aaa_v": "2.1.0-diamond-refined",
+        "aaa_v": "2.0.1-trust-boundary",
         "policy_hash": "H_POLICY_TBD",
-        "capability_pack_hash": "H_CAP_TBD"
+        "capability_pack_hash": hashlib.sha256(str(DEFAULT_PACK).encode()).hexdigest()
     }
     return json.dumps(data, sort_keys=True, separators=(',', ':'))
 
@@ -105,6 +107,30 @@ def export_evidence(args):
         if not os.path.exists(path):
             with open(path, "w") as f:
                 f.write("{}")
+
+    # Sign Ledger (v2.0.1 Step 2 Citation: implementation_plan.md#L27)
+    ledger_path = os.path.join(base_dir, "ledger_export.jsonl")
+    # For prototype, use a hardcoded agent_id/secret. In production, these come from secure storage.
+    identity = AgentIdentity("agent_alpha", "secret_key_v2.0.1")
+    
+    with open(ledger_path, "r") as f:
+        content = f.read()
+    
+    signature = identity.sign(content)
+    
+    # Update Case Snapshot with Identity Proof (Citation: implementation_plan.md#L36)
+    case_path = os.path.join(base_dir, "case_snapshot.json")
+    with open(case_path, "r") as f:
+        case_data = json.load(f)
+    
+    case_data["identity_proof"] = {
+        "agent_id": identity.agent_id,
+        "signature": signature,
+        "method": "HMAC-SHA256"
+    }
+    
+    with open(case_path, "w") as f:
+        json.dump(case_data, f, indent=2)
 
     # Generate hash_chain.txt (Lexical order)
     hash_entries = []
@@ -184,10 +210,28 @@ def omega_replay(args):
             print(f"[!] ENV_DRIFT: {diffs}")
             sys.exit(2) # ENV_DRIFT
 
-        # 3. Decision/Hash Verification (Placeholder for actual decision re-calc)
-        # Simulation: Read test_results.json and verify it hasn't been tampered
-        # In a real OMEGA run, we would re-run the test logic here.
-        print("[v] Replay: Integrity and Env verified. (MATCH)")
+        # 3. Decision/Hash Verification (including Identity Signature check)
+        # Citation: implementation_plan.md#L28
+        case_path = os.path.join(tmp_dir, "case_snapshot.json")
+        ledger_path = os.path.join(tmp_dir, "ledger_export.jsonl")
+        
+        with open(case_path, "r") as f:
+            case_data = json.load(f)
+            
+        proof = case_data.get("identity_proof")
+        if not proof:
+            print("[X] Missing identity_proof in case_snapshot.json")
+            sys.exit(1)
+            
+        with open(ledger_path, "r") as f:
+            ledger_content = f.read()
+            
+        identity = AgentIdentity(proof["agent_id"], "secret_key_v2.0.1") # Secret must match
+        if not identity.verify(ledger_content, proof["signature"]):
+            print(f"[X] Identity Signature Verification FAILED for {proof['agent_id']}")
+            sys.exit(1)
+            
+        print("[v] Replay: Integrity, Env, and Identity verified. (MATCH)")
         sys.exit(0)
         
     except SystemExit as se:
