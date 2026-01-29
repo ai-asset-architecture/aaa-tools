@@ -6,7 +6,7 @@ from packaging import version
 import sys
 
 # Assume these are available in the package distribution, or passed in config
-CURRENT_CLI_VERSION = "1.2.0" 
+CURRENT_CLI_VERSION = "2.0.0" 
 
 logger = logging.getLogger(__name__)
 
