@@ -30,6 +30,11 @@
         <div class="kpi-value">{{rate_pct}}</div>
         <div class="kpi-sub" data-i18n="kpi.compliance_hint">All checks pass across active repos.</div>
       </div>
+      <div class="kpi-card kpi-primary">
+        <div class="kpi-label" data-i18n="kpi.bundle_compliance">Evidence Bundle Compliance</div>
+        <div class="kpi-value">--</div>
+        <div class="kpi-sub" data-i18n="kpi.bundle_hint">5-core files integrity coverage.</div>
+      </div>
       <div class="kpi-card kpi-alert">
         <div class="kpi-label" data-i18n="kpi.drift_rate">Drift Rate</div>
         <div class="kpi-value">{{drift_rate_pct}}</div>
@@ -71,10 +76,12 @@
         </div>
         <div class="trend-body">
           <div class="trend-chart">
+            <div class="axis-label axis-y" data-i18n="axis.rate">Rate (%)</div>
             <svg id="trend-chart" viewBox="0 0 600 200" role="img" aria-label="Compliance trend chart">
               <path id="trend-line" d="" />
               <path id="trend-area" d="" />
             </svg>
+            <div class="axis-label axis-x" data-i18n="axis.time">Time</div>
             <div class="trend-empty" id="trend-empty" data-i18n="trend.empty">Collecting data…</div>
           </div>
           <div class="trend-stats">
@@ -106,10 +113,12 @@
         </div>
         <div class="trend-body">
           <div class="trend-chart">
+            <div class="axis-label axis-y" data-i18n="axis.rate">Rate (%)</div>
             <svg id="drift-chart" viewBox="0 0 600 200" role="img" aria-label="Drift trend chart">
               <path id="drift-line" d="" />
               <path id="drift-area" d="" />
             </svg>
+            <div class="axis-label axis-x" data-i18n="axis.time">Time</div>
             <div class="trend-empty" id="drift-empty" data-i18n="trend.empty">Collecting data…</div>
           </div>
           <div class="trend-stats">
@@ -141,10 +150,12 @@
         </div>
         <div class="trend-body">
           <div class="trend-chart">
+            <div class="axis-label axis-y" data-i18n="axis.health">Health (%)</div>
             <svg id="health-chart" viewBox="0 0 600 200" role="img" aria-label="Repo health trend chart">
               <path id="health-line" d="" />
               <path id="health-area" d="" />
             </svg>
+            <div class="axis-label axis-x" data-i18n="axis.time">Time</div>
             <div class="trend-empty" id="health-empty" data-i18n="trend.empty">Collecting data…</div>
           </div>
           <div class="trend-stats">
@@ -165,7 +176,48 @@
       </div>
     </section>
 
+    <div class="data-source-note">
+      <span class="data-source-label" data-i18n="data.source">Data Source</span>:
+      <code>ledger_export.jsonl</code> → <code>metrics.*</code>
+    </div>
+
     <section class="grid-2">
+      <div class="panel">
+        <div class="panel-title" data-i18n="panel.boundary">Trust Boundary Map</div>
+        <div class="panel-sub" data-i18n="panel.boundary_hint">Repo grouping by control/execution/asset layers.</div>
+        <div class="boundary-group">
+          <div class="boundary-title" data-i18n="boundary.control">Control Plane</div>
+          <div class="boundary-chips">
+            <span class="chip">aaa-tools</span>
+            <span class="chip">aaa-policies</span>
+            <span class="chip">aaa-observability</span>
+            <span class="chip">.github</span>
+          </div>
+        </div>
+        <div class="boundary-group">
+          <div class="boundary-title" data-i18n="boundary.execution">Execution Plane</div>
+          <div class="boundary-chips">
+            <span class="chip">aaa-actions</span>
+            <span class="chip">aaa-evals</span>
+          </div>
+        </div>
+        <div class="boundary-group">
+          <div class="boundary-title" data-i18n="boundary.asset">Asset Layer</div>
+          <div class="boundary-chips">
+            <span class="chip">ai-asset-architecture-registry</span>
+            <span class="chip">aaa-prompts</span>
+          </div>
+        </div>
+        <div class="boundary-group">
+          <div class="boundary-title" data-i18n="boundary.docs">Documentation</div>
+          <div class="boundary-chips">
+            <span class="chip">aaa-docs</span>
+            <span class="chip">aaa-tpl-docs</span>
+            <span class="chip">aaa-tpl-service</span>
+            <span class="chip">aaa-tpl-frontend</span>
+          </div>
+        </div>
+      </div>
       <div class="panel">
         <div class="panel-title" data-i18n="panel.failing">Failing Repos</div>
         <div class="panel-sub" data-i18n="panel.failing_hint">Highest priority remediation list.</div>
@@ -173,7 +225,10 @@
           {{failing_list}}
         </ul>
       </div>
-      <div class="panel">
+    </section>
+
+    <section class="panel-row">
+      <div class="panel panel-full">
         <div class="panel-title" data-i18n="panel.inventory">Repo Inventory</div>
         <div class="panel-sub" data-i18n="panel.inventory_hint">Full list with compliance status.</div>
         <div class="table-wrap">
@@ -181,7 +236,7 @@
             <thead>
               <tr>
                 <th data-i18n="table.repo">Repo</th>
-                <th data-i18n="table.type">Type</th>
+                <th data-i18n="table.type">Boundary</th>
                 <th data-i18n="table.compliance">Compliance</th>
                 <th data-i18n="table.failing">Failing Checks</th>
               </tr>

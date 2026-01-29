@@ -149,15 +149,34 @@ h1 {
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 18px;
+}
+
+.panel-row {
+  margin-top: 18px;
+}
+
+.panel-full {
+  width: 100%;
 }
 
 .trend-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr;
   gap: 18px;
   margin-bottom: 24px;
+}
+
+.data-source-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 24px;
+}
+
+.data-source-note code {
+  font-family: var(--mono);
+  font-size: 11px;
 }
 
 .trend-card {
@@ -210,7 +229,7 @@ h1 {
   position: relative;
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 12px;
+  padding: 24px 12px 28px;
   background: color-mix(in srgb, var(--bg) 60%, transparent);
   min-height: 210px;
 }
@@ -218,6 +237,29 @@ h1 {
 .trend-chart svg {
   width: 100%;
   height: 180px;
+}
+
+.axis-label {
+  position: absolute;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.axis-y {
+  top: 10px;
+  left: 10px;
+}
+
+.axis-x {
+  bottom: 8px;
+  right: 12px;
+}
+
+.axis-tick {
+  fill: var(--muted);
+  font-size: 10px;
+  font-family: var(--mono);
 }
 
 #trend-line {
@@ -311,6 +353,34 @@ h1 {
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 12px;
+}
+
+.boundary-group {
+  margin-bottom: 14px;
+}
+
+.boundary-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.boundary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 
 .failing-list {
