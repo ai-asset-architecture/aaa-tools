@@ -1014,7 +1014,7 @@ def apply_templates(
                 continue
             _copy_tree(item, target_dir / item.name)
         repo_type = _repo_type_from_plan(repo)
-        write_repo_metadata(target_dir, repo_type, plan_ref)
+        write_repo_metadata(target_dir, repo_type, str(from_plan))
 
         status_result = _run_command(["git", "status", "--porcelain"], cwd=target_dir)
         if not status_result.stdout.strip():

@@ -334,6 +334,7 @@ if typer:
 
 
 if typer:
+    from .cmd import registry_commands
     sync_typer = typer.Typer(no_args_is_help=True)
     sync_typer.command("skills")(sync_skills)
     sync_typer.command("workflows")(sync_workflows)
@@ -341,6 +342,7 @@ if typer:
     app.add_typer(init_commands.init_app, name="init")
     app.add_typer(run_typer, name="run")
     app.add_typer(governance_typer, name="governance")
+    app.add_typer(ops_typer, name="ops")
     app.add_typer(ops_typer, name="ops")
     app.add_typer(ops_typer, name="ops")
     app.add_typer(pack_typer, name="pack")

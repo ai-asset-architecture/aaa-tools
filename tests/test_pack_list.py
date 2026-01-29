@@ -27,7 +27,10 @@ class PackListTests(unittest.TestCase):
                 text=True,
                 check=False,
             )
-            payload = json.loads(result.stdout)
+            # Filter out potential update notifications or other noise
+            lines = result.stdout.strip().splitlines()
+            json_line = next((line for line in lines if line.startswith("{")), "{}")
+            payload = json.loads(json_line)
             self.assertEqual(payload["installed"][0]["id"], "agent-safety")
 
 
