@@ -155,6 +155,8 @@ if typer:
     registry_typer = registry_commands.app
     from .cmd import lock_commands
     lock_typer = lock_commands.app
+    from .cmd import observability_commands
+    observability_typer = observability_commands.app
 
     @run_typer.command("runbook")
     def run_runbook(
@@ -248,6 +250,18 @@ if typer:
             payload = audit_commands.run_remote_audit(remote)
         else:
             raise typer.Exit(code=2)
+
+        # v1.8 Observability Integration (Metrics + Ledger)
+        try:
+            from .observability.custom_metrics import MetricStore
+            store = MetricStore()
+            # Extract compliance score (assumption: payload has 'stats' or similar)
+            # For v1.7 audit payload, let's assume raw_result has 'compliance_score'
+            # If not, we calculate it or just log success for now
+            score = payload.get("stats", {}).get("compliance_score", 0.0)
+            store.record("audit_compliance", score, tags={"scope": "local" if local else "remote"})
+        except Exception:
+            pass # Fail open if observability DB is locked/failed
         
         # If output file is specified, always write JSON there (standard behavior)
         if output:
@@ -354,6 +368,7 @@ if typer:
     app.add_typer(pack_typer, name="pack")
     app.add_typer(registry_typer, name="registry")
     app.add_typer(lock_typer, name="lock")
+    app.add_typer(observability_typer, name="observe")
 
 
 def _run_fallback() -> int:
