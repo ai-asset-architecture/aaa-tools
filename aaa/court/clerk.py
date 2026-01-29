@@ -5,13 +5,17 @@ from uuid import uuid4
 from aaa.court.schema import CaseFile, CaseStatus, Ruling, Verdict
 
 class CourtClerk:
-    def __init__(self, root_path: Optional[Path] = None):
-        if root_path:
+    def __init__(self, root_path: Optional[Path] = None, data_dir: Optional[Path] = None):
+        if data_dir:
+             self.case_dir = data_dir / "cases"
+             self.root_path = data_dir.parent
+        elif root_path:
             self.root_path = root_path
+            self.case_dir = self.root_path / "court" / "cases"
         else:
             self.root_path = Path.cwd() / ".aaa"
+            self.case_dir = self.root_path / "court" / "cases"
         
-        self.case_dir = self.root_path / "court" / "cases"
         self.case_dir.mkdir(parents=True, exist_ok=True)
 
     def file_case(self, plaintiff: str, facts: Dict[str, Any]) -> str:

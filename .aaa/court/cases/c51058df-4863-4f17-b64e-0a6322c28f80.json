@@ -1,0 +1,20 @@
+{
+  "case_id": "c51058df-4863-4f17-b64e-0a6322c28f80",
+  "plaintiff": "Antigravity-v2.0",
+  "status": "adjudicated",
+  "facts": {
+    "violation": "aaa_check_failure",
+    "details": [
+      "missing_gate_workflow",
+      "check_failed:repo_type_consistency"
+    ],
+    "reason": "Blocking v2.0 Init. Requesting Extension of Case #001 Precedent."
+  },
+  "submitted_at": "2026-01-29T04:41:51.989196",
+  "verdict": {
+    "ruling": "waive",
+    "reasoning": "Precedent (Case #001) Applies. Waiver Granted for v2.0 Bootstrap.",
+    "judge_id": "Supreme-Judge",
+    "ruled_at": "2026-01-29T04:46:47.010634"
+  }
+}

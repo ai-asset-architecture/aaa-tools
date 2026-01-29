@@ -372,6 +372,12 @@ if typer:
     app.add_typer(lock_typer, name="lock")
     app.add_typer(observability_typer, name="observe")
     app.add_typer(court_commands.app, name="court", help="Supreme Court Interface (v1.9)")
+    
+    # v2.0 Agent OS
+    from .cmd import os_commands
+    app.add_typer(os_commands.app, name="os", help="Agent OS Kernel (v2.0)")
+    app.add_typer(os_commands.trust_app, name="trust", help="Global Trust Network")
+    app.add_typer(os_commands.cert_app, name="cert", help="Enterprise Certification")
 
 
 def _run_fallback() -> int:
