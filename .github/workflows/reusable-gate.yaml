@@ -1,0 +1,26 @@
+name: Governance Gate
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
+    secrets:
+      token:
+        required: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up library
+        run: |
+            python -m pip install --upgrade pip
+            pip install "git+https://github.com/ai-asset-architecture/aaa-tools.git@v1"
+      - name: AAA Audit
+        run: aaa audit --local
+        env:
+            GITHUB_TOKEN: ${{ secrets.token }}

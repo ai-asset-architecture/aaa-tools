@@ -1,0 +1,11 @@
+{
+  "case_id": "698c3470-2d9c-4777-83c1-5447da37542d",
+  "plaintiff": "Antigravity-Agent",
+  "status": "pending",
+  "facts": {
+    "violation": "missing_gate_workflow",
+    "reason": "Requesting WAIVER for v1.9 bootstrapping as authorized by User."
+  },
+  "submitted_at": "2026-01-29T04:26:43.331439",
+  "verdict": null
+}

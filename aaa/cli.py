@@ -354,6 +354,8 @@ if typer:
 
 if typer:
     from .cmd import registry_commands
+    from .cmd import court_commands
+
     sync_typer = typer.Typer(no_args_is_help=True)
     sync_typer.command("skills")(sync_skills)
     sync_typer.command("workflows")(sync_workflows)
@@ -369,6 +371,7 @@ if typer:
     app.add_typer(registry_typer, name="registry")
     app.add_typer(lock_typer, name="lock")
     app.add_typer(observability_typer, name="observe")
+    app.add_typer(court_commands.app, name="court", help="Supreme Court Interface (v1.9)")
 
 
 def _run_fallback() -> int:
