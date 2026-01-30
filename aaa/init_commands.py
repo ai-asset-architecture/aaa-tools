@@ -39,6 +39,7 @@ except Exception:  # pragma: no cover - fallback when jsonschema isn't available
     Draft202012Validator = None
 
 from .jsonl import emit_jsonl
+from . import messages
 from . import verify_ci as verify_ci_module
 
 
@@ -110,6 +111,14 @@ def _run_command(cmd: list[str], cwd: Optional[Path] = None, input_data: Optiona
 
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _emit_post_init_hint() -> None:
+    hint = messages.post_init_repo_checks_hint()
+    if _HAS_TYPER:
+        typer.echo(hint)
+    else:
+        print(hint)
 
 
 def write_repo_metadata(repo_root: Path, repo_type: str, plan_ref: str) -> None:
@@ -795,6 +804,7 @@ def run_plan(
         step_id=step_id,
         data={"status": "completed", "report_path": str(report_path)},
     )
+    _emit_post_init_hint()
 
 
 @init_app.command("ensure-repos")
@@ -1588,6 +1598,7 @@ def enterprise(
     workflow_ref = os.environ.get("AAA_GATE_WORKFLOW", DEFAULT_GATE_WORKFLOW)
     _write_gate_workflow(repo_root, workflow_ref)
     write_repo_metadata(repo_root, repo_type, plan_ref)
+    _emit_post_init_hint()
 
 @init_app.command("interactive")
 def interactive(
@@ -1664,4 +1675,3 @@ def interactive(
         py_path = target_dir / f"check_{name.replace('-', '_')}.py"
         py_path.write_text(script, encoding="utf-8")
         typer.echo(f"Compiled script saved to {py_path}")
-
