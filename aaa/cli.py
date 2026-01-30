@@ -409,6 +409,7 @@ def _run_fallback() -> int:
     init_parser = subparsers.add_parser("init")
     init_parser.add_argument("--plan")
     init_parser.add_argument("--mode", default="pr")
+    init_parser.add_argument("--preset")
     init_parser.add_argument("--jsonl", action="store_true")
     init_parser.add_argument("--log-dir")
     init_parser.add_argument("--dry-run", action="store_true")
@@ -433,6 +434,7 @@ def _run_fallback() -> int:
     ensure_parser = init_sub.add_parser("ensure-repos")
     ensure_parser.add_argument("--org", required=True)
     ensure_parser.add_argument("--from-plan", required=True)
+    ensure_parser.add_argument("--preset")
     ensure_parser.add_argument("--jsonl", action="store_true")
     ensure_parser.add_argument("--log-dir")
     ensure_parser.add_argument("--dry-run", action="store_true")
@@ -440,6 +442,7 @@ def _run_fallback() -> int:
     apply_parser = init_sub.add_parser("apply-templates")
     apply_parser.add_argument("--org", required=True)
     apply_parser.add_argument("--from-plan", required=True)
+    apply_parser.add_argument("--preset")
     apply_parser.add_argument("--aaa-tag", required=True)
     apply_parser.add_argument("--jsonl", action="store_true")
     apply_parser.add_argument("--log-dir")
@@ -448,6 +451,7 @@ def _run_fallback() -> int:
     protect_parser = init_sub.add_parser("protect")
     protect_parser.add_argument("--org", required=True)
     protect_parser.add_argument("--from-plan", required=True)
+    protect_parser.add_argument("--preset")
     protect_parser.add_argument("--jsonl", action="store_true")
     protect_parser.add_argument("--log-dir")
     protect_parser.add_argument("--dry-run", action="store_true")
@@ -455,6 +459,7 @@ def _run_fallback() -> int:
     verify_parser = init_sub.add_parser("verify-ci")
     verify_parser.add_argument("--org", required=True)
     verify_parser.add_argument("--from-plan", required=True)
+    verify_parser.add_argument("--preset")
     verify_parser.add_argument("--jsonl", action="store_true")
     verify_parser.add_argument("--log-dir")
     verify_parser.add_argument("--dry-run", action="store_true")
@@ -462,6 +467,7 @@ def _run_fallback() -> int:
     open_prs_parser = init_sub.add_parser("open-prs")
     open_prs_parser.add_argument("--org", required=True)
     open_prs_parser.add_argument("--from-plan", required=True)
+    open_prs_parser.add_argument("--preset")
     open_prs_parser.add_argument("--jsonl", action="store_true")
     open_prs_parser.add_argument("--log-dir")
     open_prs_parser.add_argument("--dry-run", action="store_true")
@@ -469,6 +475,7 @@ def _run_fallback() -> int:
     repo_checks_parser = init_sub.add_parser("repo-checks")
     repo_checks_parser.add_argument("--org", required=True)
     repo_checks_parser.add_argument("--from-plan", required=True)
+    repo_checks_parser.add_argument("--preset")
     repo_checks_parser.add_argument("--suite", required=True)
     repo_checks_parser.add_argument("--jsonl", action="store_true")
     repo_checks_parser.add_argument("--log-dir")
@@ -542,6 +549,7 @@ def _run_fallback() -> int:
             init_commands.run_plan(
                 plan=Path(args.plan),
                 mode=args.mode,
+                preset=args.preset,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
@@ -559,6 +567,7 @@ def _run_fallback() -> int:
             init_commands.ensure_repos(
                 org=args.org,
                 from_plan=Path(args.from_plan),
+                preset=args.preset,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
@@ -568,6 +577,7 @@ def _run_fallback() -> int:
             init_commands.apply_templates(
                 org=args.org,
                 from_plan=Path(args.from_plan),
+                preset=args.preset,
                 aaa_tag=args.aaa_tag,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
@@ -578,6 +588,7 @@ def _run_fallback() -> int:
             init_commands.protect(
                 org=args.org,
                 from_plan=Path(args.from_plan),
+                preset=args.preset,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
@@ -587,6 +598,7 @@ def _run_fallback() -> int:
             init_commands.verify_ci(
                 org=args.org,
                 from_plan=Path(args.from_plan),
+                preset=args.preset,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
@@ -596,6 +608,7 @@ def _run_fallback() -> int:
             init_commands.open_prs(
                 org=args.org,
                 from_plan=Path(args.from_plan),
+                preset=args.preset,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,
                 dry_run=args.dry_run,
@@ -605,6 +618,7 @@ def _run_fallback() -> int:
             init_commands.repo_checks(
                 org=args.org,
                 from_plan=Path(args.from_plan),
+                preset=args.preset,
                 suite=args.suite,
                 jsonl=args.jsonl,
                 log_dir=Path(args.log_dir) if args.log_dir else None,

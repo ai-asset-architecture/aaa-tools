@@ -121,6 +121,13 @@ def _emit_post_init_hint() -> None:
         print(hint)
 
 
+def _emit_notice(message: str) -> None:
+    if _HAS_TYPER:
+        typer.echo(message)
+    else:
+        print(message)
+
+
 def write_repo_metadata(repo_root: Path, repo_type: str, plan_ref: str) -> None:
     anchor_dir = repo_root / ".aaa"
     anchor_dir.mkdir(parents=True, exist_ok=True)
@@ -147,6 +154,14 @@ def _repo_type_from_plan(repo: dict[str, Any]) -> str:
     value = repo.get("repo_type") or repo.get("type") or "all"
     repo_type = str(value).strip()
     return repo_type if repo_type else "all"
+
+
+def _has_dot_github(repos: Iterable[dict[str, Any]]) -> bool:
+    for repo in repos:
+        name = str(repo.get("name", "")).strip()
+        if name == ".github" or name.endswith("/.github"):
+            return True
+    return False
 
 
 def _write_gate_workflow(repo_root: Path, workflow_ref: str) -> None:
@@ -249,7 +264,7 @@ def _plan_from_file(plan_path: Path) -> dict[str, Any]:
 
 
 def _fallback_validate_plan(plan: dict[str, Any]) -> Optional[dict[str, Any]]:
-    required_top = ["plan_version", "aaa", "target", "repos", "steps", "reporting"]
+    required_top = ["plan_version", "aaa", "target", "steps", "reporting"]
     for key in required_top:
         if key not in plan:
             return {
@@ -258,12 +273,12 @@ def _fallback_validate_plan(plan: dict[str, Any]) -> Optional[dict[str, Any]]:
                 "schema_path": f"required/{key}",
                 "hint": "add required field",
             }
-    if plan.get("plan_version") != "0.1":
+    if plan.get("plan_version") not in {"0.1", "0.7", "2.0"}:
         return {
             "message": "invalid plan_version",
             "json_path": "plan_version",
             "schema_path": "plan_version",
-            "hint": "plan_version must be 0.1",
+            "hint": "plan_version must be one of: 0.1, 0.7, 2.0",
         }
     target = plan.get("target", {})
     project_slug = target.get("project_slug", "")
@@ -274,24 +289,75 @@ def _fallback_validate_plan(plan: dict[str, Any]) -> Optional[dict[str, Any]]:
             "schema_path": "target/project_slug",
             "hint": "project_slug must be kebab-case",
         }
-    repos = plan.get("repos", [])
-    if not isinstance(repos, list) or not repos:
-        return {
-            "message": "repos must be a non-empty array",
-            "json_path": "repos",
-            "schema_path": "repos",
-            "hint": "add at least one repo",
-        }
-    for idx, repo in enumerate(repos):
-        checks = repo.get("required_checks", [])
-        missing = _missing_required_checks(checks)
-        if missing:
+    presets = plan.get("presets")
+    if presets is not None:
+        if not isinstance(presets, dict) or not presets:
             return {
-                "message": "required_checks missing required entries",
-                "json_path": f"repos/{idx}/required_checks",
-                "schema_path": "repos/required_checks",
-                "hint": f"required_checks missing: {', '.join(missing)}",
+                "message": "presets must be a non-empty object",
+                "json_path": "presets",
+                "schema_path": "presets",
+                "hint": "define at least one preset",
             }
+        default_preset = plan.get("default_preset")
+        if not default_preset:
+            return {
+                "message": "default_preset missing",
+                "json_path": "default_preset",
+                "schema_path": "default_preset",
+                "hint": "set default_preset to a valid preset key",
+            }
+        if default_preset not in presets:
+            return {
+                "message": "default_preset not found in presets",
+                "json_path": "default_preset",
+                "schema_path": "default_preset",
+                "hint": f"available presets: {', '.join(sorted(presets.keys()))}",
+            }
+        for preset_name, preset in presets.items():
+            repos = preset.get("repos") if isinstance(preset, dict) else None
+            if not isinstance(repos, list) or not repos:
+                return {
+                    "message": "preset repos must be a non-empty array",
+                    "json_path": f"presets/{preset_name}/repos",
+                    "schema_path": "presets/repos",
+                    "hint": "add at least one repo",
+                }
+            if not _has_dot_github(repos):
+                return {
+                    "message": "missing required repo: .github",
+                    "json_path": f"presets/{preset_name}/repos",
+                    "schema_path": "presets/repos",
+                    "hint": "missing_required_repo=.github",
+                }
+            for idx, repo in enumerate(repos):
+                checks = repo.get("required_checks", [])
+                missing = _missing_required_checks(checks)
+                if missing:
+                    return {
+                        "message": "required_checks missing required entries",
+                        "json_path": f"presets/{preset_name}/repos/{idx}/required_checks",
+                        "schema_path": "repos/required_checks",
+                        "hint": f"required_checks missing: {', '.join(missing)}",
+                    }
+    else:
+        repos = plan.get("repos", [])
+        if not isinstance(repos, list) or not repos:
+            return {
+                "message": "repos must be a non-empty array",
+                "json_path": "repos",
+                "schema_path": "repos",
+                "hint": "add at least one repo",
+            }
+        for idx, repo in enumerate(repos):
+            checks = repo.get("required_checks", [])
+            missing = _missing_required_checks(checks)
+            if missing:
+                return {
+                    "message": "required_checks missing required entries",
+                    "json_path": f"repos/{idx}/required_checks",
+                    "schema_path": "repos/required_checks",
+                    "hint": f"required_checks missing: {', '.join(missing)}",
+                }
     steps = plan.get("steps", [])
     if not isinstance(steps, list) or not steps:
         return {
@@ -308,7 +374,55 @@ def _validate_plan(plan: dict[str, Any], schema_path: Path) -> Optional[dict[str
         return _fallback_validate_plan(plan)
     schema = _load_json(schema_path)
     validator = Draft202012Validator(schema)
-    return _first_validation_error(validator, plan)
+    error = _first_validation_error(validator, plan)
+    if error:
+        return error
+    return _validate_plan_semantics(plan)
+
+
+def _validate_plan_semantics(plan: dict[str, Any]) -> Optional[dict[str, Any]]:
+    presets = plan.get("presets")
+    if presets is None:
+        return None
+    if not isinstance(presets, dict) or not presets:
+        return {
+            "message": "presets must be a non-empty object",
+            "json_path": "presets",
+            "schema_path": "presets",
+            "hint": "define at least one preset",
+        }
+    default_preset = plan.get("default_preset")
+    if not default_preset:
+        return {
+            "message": "default_preset missing",
+            "json_path": "default_preset",
+            "schema_path": "default_preset",
+            "hint": "set default_preset to a valid preset key",
+        }
+    if default_preset not in presets:
+        return {
+            "message": "default_preset not found in presets",
+            "json_path": "default_preset",
+            "schema_path": "default_preset",
+            "hint": f"available presets: {', '.join(sorted(presets.keys()))}",
+        }
+    for preset_name, preset in presets.items():
+        repos = preset.get("repos") if isinstance(preset, dict) else None
+        if not isinstance(repos, list) or not repos:
+            return {
+                "message": "preset repos must be a non-empty array",
+                "json_path": f"presets/{preset_name}/repos",
+                "schema_path": "presets/repos",
+                "hint": "add at least one repo",
+            }
+        if not _has_dot_github(repos):
+            return {
+                "message": "missing required repo: .github",
+                "json_path": f"presets/{preset_name}/repos",
+                "schema_path": "presets/repos",
+                "hint": "missing_required_repo=.github",
+            }
+    return None
 
 
 def _emit_error_and_exit(
@@ -351,6 +465,94 @@ def _project_slug_from_plan(plan: dict[str, Any]) -> str:
 
 def _missing_required_checks(checks: Iterable[str]) -> list[str]:
     return sorted({"lint", "test", "eval"} - set(checks))
+
+
+def _resolve_repos_from_plan(
+    plan: dict[str, Any],
+    preset: Optional[str],
+    *,
+    jsonl: bool,
+    command: str,
+    step_id: str,
+) -> list[dict[str, Any]]:
+    presets = plan.get("presets")
+    if presets is None:
+        if preset:
+            _emit_error_and_exit(
+                jsonl,
+                command,
+                step_id,
+                ERROR_INVALID_ARGUMENT,
+                "preset override requires presets",
+                {"preset": preset},
+            )
+        _emit_notice("MODE=legacy")
+        return plan.get("repos", [])
+
+    if not isinstance(presets, dict) or not presets:
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "presets must be a non-empty object",
+        )
+
+    preset_name = preset or plan.get("default_preset")
+    if not preset_name:
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "default_preset missing",
+        )
+    if preset_name not in presets:
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "preset not found",
+            {"preset": preset_name, "available": sorted(presets.keys())},
+        )
+
+    preset_block = presets.get(preset_name)
+    if not isinstance(preset_block, dict):
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "preset entry must be an object",
+            {"preset": preset_name},
+        )
+
+    repos = preset_block.get("repos")
+    if not isinstance(repos, list) or not repos:
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "preset repos must be a non-empty array",
+            {"preset": preset_name},
+        )
+
+    if not _has_dot_github(repos):
+        _emit_error_and_exit(
+            jsonl,
+            command,
+            step_id,
+            ERROR_INVALID_ARGUMENT,
+            "missing required repo: .github",
+            {"missing_required_repo": ".github", "preset": preset_name},
+        )
+
+    if plan.get("repos"):
+        _emit_notice("WARN legacy_repos_ignored=true")
+
+    return repos
 
 
 def _write_log(log_dir: Optional[Path], name: str, content: str) -> None:
@@ -595,6 +797,7 @@ def validate_plan(
 def run_plan(
     plan: Optional[Path] = typer.Option(None, "--plan"),
     mode: str = typer.Option("pr", "--mode"),
+    preset: Optional[str] = typer.Option(None, "--preset"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
     dry_run: bool = typer.Option(False, "--dry-run"),
@@ -639,6 +842,14 @@ def run_plan(
         )
 
     steps = plan_data.get("steps", [])
+    resolved_repos = _resolve_repos_from_plan(
+        plan_data,
+        preset,
+        jsonl=jsonl,
+        command=command,
+        step_id=step_id,
+    )
+    plan_data = {**plan_data, "repos": resolved_repos}
     workspace_dir = Path(os.environ.get("WORKSPACE_DIR", Path.cwd()))
     if not workspace_dir.exists():
         _emit_error_and_exit(
@@ -680,7 +891,14 @@ def run_plan(
                 continue
 
             if step_id_value == "ensure_repos":
-                ensure_repos(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                ensure_repos(
+                    org=org,
+                    from_plan=plan,
+                    preset=preset,
+                    jsonl=jsonl,
+                    log_dir=log_dir,
+                    dry_run=dry_run,
+                )
                 report_builder.add_step(
                     "ensure_repos",
                     "pass",
@@ -693,6 +911,7 @@ def run_plan(
                 apply_templates(
                     org=org,
                     from_plan=plan,
+                    preset=preset,
                     aaa_tag=aaa_tag,
                     jsonl=jsonl,
                     log_dir=log_dir,
@@ -733,7 +952,14 @@ def run_plan(
                     step.get("commands"),
                 )
             elif step_id_value == "branch_protection":
-                protect(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                protect(
+                    org=org,
+                    from_plan=plan,
+                    preset=preset,
+                    jsonl=jsonl,
+                    log_dir=log_dir,
+                    dry_run=dry_run,
+                )
                 report_builder.add_step(
                     "branch_protection",
                     "pass",
@@ -743,7 +969,14 @@ def run_plan(
                 )
             elif step_id_value == "open_prs":
                 if mode == "pr":
-                    open_prs(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                    open_prs(
+                        org=org,
+                        from_plan=plan,
+                        preset=preset,
+                        jsonl=jsonl,
+                        log_dir=log_dir,
+                        dry_run=dry_run,
+                    )
                     if not dry_run:
                         prs_created += len(report_builder.repos)
                 report_builder.add_step(
@@ -754,7 +987,14 @@ def run_plan(
                     step.get("commands"),
                 )
             elif step_id_value == "ci_verify":
-                verify_ci(org=org, from_plan=plan, jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                verify_ci(
+                    org=org,
+                    from_plan=plan,
+                    preset=preset,
+                    jsonl=jsonl,
+                    log_dir=log_dir,
+                    dry_run=dry_run,
+                )
                 report_builder.add_step(
                     "ci_verify",
                     "pass",
@@ -763,7 +1003,15 @@ def run_plan(
                     step.get("commands"),
                 )
             elif step_id_value == "repo_evals":
-                repo_checks(org=org, from_plan=plan, suite="governance", jsonl=jsonl, log_dir=log_dir, dry_run=dry_run)
+                repo_checks(
+                    org=org,
+                    from_plan=plan,
+                    preset=preset,
+                    suite="governance",
+                    jsonl=jsonl,
+                    log_dir=log_dir,
+                    dry_run=dry_run,
+                )
                 report_builder.add_step(
                     "repo_evals",
                     "pass",
@@ -811,6 +1059,7 @@ def run_plan(
 def ensure_repos(
     org: str = typer.Option(..., "--org"),
     from_plan: Path = typer.Option(..., "--from-plan"),
+    preset: Optional[str] = typer.Option(None, "--preset"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
     dry_run: bool = typer.Option(False, "--dry-run"),
@@ -831,7 +1080,13 @@ def ensure_repos(
 
     plan = _plan_from_file(from_plan)
     visibility = plan.get("target", {}).get("visibility", "private")
-    repos = plan.get("repos", [])
+    repos = _resolve_repos_from_plan(
+        plan,
+        preset,
+        jsonl=jsonl,
+        command=command,
+        step_id=step_id,
+    )
 
     plan_ref = from_plan.name
     for repo in repos:
@@ -930,6 +1185,7 @@ def ensure_repos(
 def apply_templates(
     org: str = typer.Option(..., "--org"),
     from_plan: Path = typer.Option(..., "--from-plan"),
+    preset: Optional[str] = typer.Option(None, "--preset"),
     aaa_tag: str = typer.Option(..., "--aaa-tag"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
@@ -952,7 +1208,13 @@ def apply_templates(
     plan = _plan_from_file(from_plan)
     aaa_org = plan.get("aaa", {}).get("org", "ai-asset-architecture")
     project_slug = plan.get("target", {}).get("project_slug", "project")
-    repos = plan.get("repos", [])
+    repos = _resolve_repos_from_plan(
+        plan,
+        preset,
+        jsonl=jsonl,
+        command=command,
+        step_id=step_id,
+    )
     temp_root = REPO_ROOT / ".aaa-tmp"
     temp_root.mkdir(parents=True, exist_ok=True)
 
@@ -1122,6 +1384,7 @@ def apply_templates(
 def protect(
     org: str = typer.Option(..., "--org"),
     from_plan: Path = typer.Option(..., "--from-plan"),
+    preset: Optional[str] = typer.Option(None, "--preset"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
     dry_run: bool = typer.Option(False, "--dry-run"),
@@ -1142,7 +1405,13 @@ def protect(
 
     plan = _plan_from_file(from_plan)
     default_branch = _default_branch_from_plan(plan)
-    repos = plan.get("repos", [])
+    repos = _resolve_repos_from_plan(
+        plan,
+        preset,
+        jsonl=jsonl,
+        command=command,
+        step_id=step_id,
+    )
     manifest = _load_checks_manifest()
 
     for repo in repos:
@@ -1234,6 +1503,7 @@ def protect(
 def verify_ci(
     org: str = typer.Option(..., "--org"),
     from_plan: Path = typer.Option(..., "--from-plan"),
+    preset: Optional[str] = typer.Option(None, "--preset"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
     dry_run: bool = typer.Option(False, "--dry-run"),
@@ -1254,7 +1524,13 @@ def verify_ci(
 
     plan = _plan_from_file(from_plan)
     default_branch = _default_branch_from_plan(plan)
-    repos = plan.get("repos", [])
+    repos = _resolve_repos_from_plan(
+        plan,
+        preset,
+        jsonl=jsonl,
+        command=command,
+        step_id=step_id,
+    )
     manifest = _load_checks_manifest()
 
     if dry_run:
@@ -1352,6 +1628,7 @@ def verify_ci(
 def open_prs(
     org: str = typer.Option(..., "--org"),
     from_plan: Path = typer.Option(..., "--from-plan"),
+    preset: Optional[str] = typer.Option(None, "--preset"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
     dry_run: bool = typer.Option(False, "--dry-run"),
@@ -1374,7 +1651,13 @@ def open_prs(
     default_branch = _default_branch_from_plan(plan)
     aaa_tag = _aaa_version_from_plan(plan)
     project_slug = _project_slug_from_plan(plan)
-    repos = plan.get("repos", [])
+    repos = _resolve_repos_from_plan(
+        plan,
+        preset,
+        jsonl=jsonl,
+        command=command,
+        step_id=step_id,
+    )
 
     for repo in repos:
         repo_name = str(repo.get("name", "")).strip()
@@ -1463,6 +1746,7 @@ def repo_checks(
     org: str = typer.Option(..., "--org"),
     from_plan: Path = typer.Option(..., "--from-plan"),
     suite: str = typer.Option(..., "--suite"),
+    preset: Optional[str] = typer.Option(None, "--preset"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
     dry_run: bool = typer.Option(False, "--dry-run"),
@@ -1492,7 +1776,13 @@ def repo_checks(
         )
 
     plan = _plan_from_file(from_plan)
-    repos = plan.get("repos", [])
+    repos = _resolve_repos_from_plan(
+        plan,
+        preset,
+        jsonl=jsonl,
+        command=command,
+        step_id=step_id,
+    )
     workspace_dir = Path(os.environ.get("WORKSPACE_DIR", Path.cwd()))
     evals_root = Path(os.environ.get("AAA_EVALS_ROOT", REPO_ROOT.parent / "aaa-evals"))
     runner = evals_root / "runner" / "run_repo_checks.py"
