@@ -1,8 +1,8 @@
-# Operate & Maintain Guide v2.0.0
+# Operate & Maintain Guide v2.0.1
 > AAA 版本開發與維運權威流程（AI/Agent 專用，無歧義可執行）。
 
 ## 文件中繼資料
-- document_version: `v2.0.0`
+- document_version: `v2.0.1`
 - effective_date: `2026-03-01`
 - replaces: `aaa-docs/bootstrap/operate_maintain_guide.md`（舊版）
 - authority_level: `workflow-law`
@@ -38,6 +38,7 @@
 3. Step2 run_ref remote-only：僅允許 `gh-actions:<repo>@<workflow_file>#<run_id>`。
 4. Completion Claim Guard：若缺 remote evidence，不得使用 `COMPLETED/PASS/已落地` 語意。
 5. Full-File Consistency：修改多視圖文件（如 index + registry）必須全檔一致。
+6. Guide Parity Gate（v2.0.1+）：`aaa-docs/bootstrap/operate_maintain_guide.md` 與 `aaa-tpl-docs/operate_maintain_guide.md` 的 canonical sections 必須通過 CI parity gate；不一致一律 FAIL。
 
 ## 5. 4-Step Lifecycle
 
@@ -73,7 +74,7 @@ Index 更新（Step1 Blocking）：
 #### Step 1 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 1
-ExitChecklistVersion: v2.0.0
+ExitChecklistVersion: v2.0.1
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```
@@ -106,7 +107,7 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 #### Step 2 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 2
-ExitChecklistVersion: v2.0.0
+ExitChecklistVersion: v2.0.1
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```
@@ -119,23 +120,53 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 - [ ] `workflow_index.md` 對應列已更新 latest_run/evidence（若適用）
 
 ### Step 3: Asset Preservation（資產保存）
-**目標**：保存可重用價值，形成可回放證據鏈。
+**目標**：把 Step1/Step2 產生的可重用成果轉成 AAA 資產，形成可回放、可匯入、可審計的資產鏈。
 
-必做：
-1. 盤點 Evals/Templates/Policy Packs/Tools。
-2. 保存證據檔（若有產出）：`result.json`, `index.json`, `run-evidence.md`。
-3. 補齊 digest（如 `inputs_digest`, `policy_digest`, `dataset_digest`）。
+AAA Valuable Assets（MUST）：
+1. Templates：
+   - 例：`docs/templates/**`、可被繼承專案直接套用的 SOP/規格模板。
+2. Prompts：
+   - 例：`prompts/**`、agent/system prompt bundles、審核提示詞。
+3. Contracts：
+   - 例：`docs/contracts/**/*.schema.json`、reason-codes、pass/fail fixtures。
+4. Workflows/Gates：
+   - 例：`.github/workflows/*.yml`、`scripts/gates/**`。
+5. Evals/Test Assets：
+   - 例：`evals/**`、測試資料、驗證案例與 replay inputs。
+6. Runbooks/Operational Guides：
+   - 例：`docs/runbooks/**`、`docs/reviews/*-checklist.md`。
+7. UI/Observability Assets（若有）：
+   - 例：dashboard spec、MCP screenshots、ops/version page mapping docs。
+
+來源規則（MUST）：
+1. Step1 產物：以「治理可重用」為主（templates/contracts/gates/workflow specs）。
+2. Step2 產物：以「可執行證據可重用」為主（run evidence/evals/replay assets）。
+3. Step3 必須明確標示每項資產來自 Step1 或 Step2，不得混寫為不明來源。
+
+最小保存交付（MUST）：
+1. `docs/evidence/<version>/<asset>/result.json`
+2. `docs/evidence/<version>/<asset>/index.json`
+3. `docs/evidence/<version>/<asset>/run-evidence.md`
+4. `docs/evidence/<version>/<asset>/asset-manifest.v0.1.json`
+   - 至少欄位：`asset_id`, `asset_type`, `source_step`, `source_paths`, `reuse_target`, `owner`, `digest`
+
+Value Gate（MUST）：
+1. 若本版本沒有任何可沉澱 AAA 資產，必須在 Step3 checklist 填寫 `No-Asset Justification`（不可留空）。
+2. 若有資產，`asset-manifest.v0.1.json` 至少 1 筆 `reuse_target` 必須是 `AAA core` 或 `AAA inherited projects`。
+3. 每筆資產都要有對應 digest（如 `inputs_digest`, `policy_digest`, `dataset_digest`, `asset_digest`）。
 
 #### Step 3 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 3
-ExitChecklistVersion: v2.0.0
+ExitChecklistVersion: v2.0.1
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```
-- [ ] Value Check 完成（非空或具 Justification）
-- [ ] 證據檔已保存（若有產出）
-- [ ] digest 欄位已填寫
+- [ ] Valuable Assets 已分類（Templates/Prompts/Contracts/Workflows/Evals/Runbooks/UI）
+- [ ] 每項資產已標註 `source_step`（Step1 或 Step2）
+- [ ] `asset-manifest.v0.1.json` 已建立（或有 No-Asset Justification）
+- [ ] 證據檔已保存（`result.json`, `index.json`, `run-evidence.md`）
+- [ ] digest 欄位已填寫（含 asset_digest 類欄位）
 - [ ] 里程碑摘要文件已建立
 
 ### Step 4: Completion & Delivery（結案與交付）
@@ -160,7 +191,7 @@ Global MCP Validation（Step4 MUST）：
 #### Step 4 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 4
-ExitChecklistVersion: v2.0.0
+ExitChecklistVersion: v2.0.1
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```

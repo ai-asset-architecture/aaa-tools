@@ -19,7 +19,7 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 ## CLI Commands
 - `aaa version` - print CLI version
 - `aaa sync` - sync skills/assets to local targets
-- `aaa sync operate-maintain-workflow` - 匯入 `operate_maintain_workflow_v2`（4-Step SOP + guide/template/index seeds）
+- `aaa sync operate-maintain-workflow` - 匯入 `operate_maintain_workflow_v2`（4-Step SOP + guide/template/index seeds + v2.0.1 guide parity gate）
 - `aaa lint` - validate required docs/sections
 - `aaa eval` - run eval suites and report results
 - `aaa run runbook <id>@<version>` - execute a runbook by id and version
