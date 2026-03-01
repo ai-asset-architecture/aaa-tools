@@ -1,8 +1,8 @@
-# Operate & Maintain Guide v2.0.1
+# Operate & Maintain Guide v2.1.0
 > AAA 版本開發與維運權威流程（AI/Agent 專用，無歧義可執行）。
 
 ## 文件中繼資料
-- document_version: `v2.0.1`
+- document_version: `v2.1.0`
 - effective_date: `2026-03-01`
 - replaces: `aaa-docs/bootstrap/operate_maintain_guide.md`（舊版）
 - authority_level: `workflow-law`
@@ -38,7 +38,7 @@
 3. Step2 run_ref remote-only：僅允許 `gh-actions:<repo>@<workflow_file>#<run_id>`。
 4. Completion Claim Guard：若缺 remote evidence，不得使用 `COMPLETED/PASS/已落地` 語意。
 5. Full-File Consistency：修改多視圖文件（如 index + registry）必須全檔一致。
-6. Guide Parity Gate（v2.0.1+）：`aaa-docs/bootstrap/operate_maintain_guide.md` 與 `aaa-tpl-docs/operate_maintain_guide.md` 的 canonical sections 必須通過 CI parity gate；不一致一律 FAIL。
+6. Guide Parity Gate（v2.1.0+）：`aaa-docs/bootstrap/operate_maintain_guide.md` 與 `aaa-tpl-docs/operate_maintain_guide.md` 的 canonical sections 必須通過 CI parity gate；不一致一律 FAIL。
 
 ## 5. 4-Step Lifecycle
 
@@ -74,7 +74,7 @@ Index 更新（Step1 Blocking）：
 #### Step 1 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 1
-ExitChecklistVersion: v2.0.1
+ExitChecklistVersion: v2.1.0
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```
@@ -107,7 +107,7 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 #### Step 2 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 2
-ExitChecklistVersion: v2.0.1
+ExitChecklistVersion: v2.1.0
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```
@@ -158,7 +158,7 @@ Value Gate（MUST）：
 #### Step 3 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 3
-ExitChecklistVersion: v2.0.1
+ExitChecklistVersion: v2.1.0
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```
@@ -192,7 +192,7 @@ Global MCP Validation（Step4 MUST）：
 #### Step 4 Exit Checklist（Machine-Scannable）
 ```yaml
 ExitChecklistStep: 4
-ExitChecklistVersion: v2.0.1
+ExitChecklistVersion: v2.1.0
 ExitChecklistOwner: <ai-or-human-role>
 ExitChecklistVerdict: PASS|FAIL|N/A
 ```

@@ -129,7 +129,7 @@ def _autofix_copy_core(core_path: Path, tpl_path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Verify operate_maintain_guide parity (v2.0.1 gate)")
+    parser = argparse.ArgumentParser(description="Verify operate_maintain_guide parity (v2.1.0 gate)")
     parser.add_argument("--core-guide", required=True)
     parser.add_argument("--tpl-guide", required=True)
     parser.add_argument("--report", required=False)
