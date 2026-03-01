@@ -94,7 +94,7 @@ ERROR_MAP = {
     "check_failed:readme": {
         "severity": "blocking",
         "message": "README.md is missing mandatory sections (Purpose, Ownership, etc.) or CODEOWNERS is absent.",
-        "rule_reference": "aaa-tpl-docs/docs/README_SPEC.md",
+        "rule_reference": "aaa-docs/docs/README.md",
         "fix_suggestion": "aaa pack fix readme"
     },
     "check_failed:workflow": {

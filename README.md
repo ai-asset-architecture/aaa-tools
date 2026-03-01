@@ -38,7 +38,7 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 - `aaa-tpl-docs`: `operate_maintain_guide.md`, `version_index.md`, `workflow_index.md` (indexes are seeded only when absent)
 
 ## Repo-checks Guide
-集中說明：`aaa-tpl-docs/docs/repo-checks-guide.md`
+集中說明：`aaa-docs/docs/repo-checks-guide.md`
 
 ## Skills Source of Truth
 `aaa-tools/skills` is the source of truth for Codex/agent skills. Consumers should sync from this repo.
