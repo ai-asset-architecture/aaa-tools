@@ -175,6 +175,7 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 必備文件：
 1. `docs/milestones/YYYYMMDD_vX.Y_<name>.md`
 2. `docs/milestones/completion-reports/vX.Y_completion_report_YYYYMMDD.md`
+3. `docs/reviews/<YYYY-MM-DD>-<version>-playbook-compliance-checklist.md`
 
 必做同步：
 1. `version_index.md`：狀態更新為最終狀態（NORMAL: `COMPLETED` / BRIDGE: `COMPLETED_STEP1`）
@@ -197,6 +198,7 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 ```
 - [ ] completion report 已建立
 - [ ] milestone 摘要已建立
+- [ ] playbook compliance checklist 已建立（`docs/reviews/<date>-<version>-playbook-compliance-checklist.md`）
 - [ ] index 同步完成（version/workflow）
 - [ ] Step4 MCP 5頁驗證證據存在
 - [ ] completion claim 與 remote evidence 一致
