@@ -194,6 +194,50 @@ def _upsert_repo_type_index(target_dir: Path, repo_type: str) -> None:
     index_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
 
 
+def _seed_operate_maintain_workflow_v2(target_dir: Path, template: str) -> list[str]:
+    """Seed workflow-law assets into template repos during init apply-templates."""
+    capability_root = REPO_ROOT / "workflows" / "operate_maintain_workflow_v2"
+    if not capability_root.exists():
+        return []
+
+    copied: list[str] = []
+    template_name = template.strip()
+
+    def _copy_if_exists(src_rel: str, dest_rel: str, overwrite: bool = True) -> None:
+        src = capability_root / src_rel
+        dest = target_dir / dest_rel
+        if not src.exists():
+            return
+        if dest.exists() and not overwrite:
+            return
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        copied.append(dest_rel)
+
+    if template_name == "aaa-docs":
+        _copy_if_exists(
+            "aaa-docs/bootstrap/operate_maintain_guide.md",
+            "bootstrap/operate_maintain_guide.md",
+            overwrite=True,
+        )
+        _copy_if_exists(
+            "aaa-docs/templates/validation/feature_milestone_4step_sop_template_v2.0.0.md",
+            "templates/validation/feature_milestone_4step_sop_template_v2.0.0.md",
+            overwrite=True,
+        )
+    elif template_name == "aaa-tpl-docs":
+        _copy_if_exists(
+            "aaa-tpl-docs/operate_maintain_guide.md",
+            "operate_maintain_guide.md",
+            overwrite=True,
+        )
+        # System-maintained raw indexes: seed only when absent.
+        _copy_if_exists("aaa-tpl-docs/version_index.md", "version_index.md", overwrite=False)
+        _copy_if_exists("aaa-tpl-docs/workflow_index.md", "workflow_index.md", overwrite=False)
+
+    return copied
+
+
 def _schema_error_hint(error: Exception, instance: Any) -> str:
     try:
         if isinstance(instance, list) and "required_checks" in list(error.path):
@@ -1285,6 +1329,7 @@ def apply_templates(
             if item.name == ".git":
                 continue
             _copy_tree(item, target_dir / item.name)
+        _seed_operate_maintain_workflow_v2(target_dir, template)
         repo_type = _repo_type_from_plan(repo)
         write_repo_metadata(target_dir, repo_type, str(from_plan))
 

@@ -19,6 +19,7 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 ## CLI Commands
 - `aaa version` - print CLI version
 - `aaa sync` - sync skills/assets to local targets
+- `aaa sync operate-maintain-workflow` - 匯入 `operate_maintain_workflow_v2`（4-Step SOP + guide/template/index seeds）
 - `aaa lint` - validate required docs/sections
 - `aaa eval` - run eval suites and report results
 - `aaa run runbook <id>@<version>` - execute a runbook by id and version
@@ -31,6 +32,10 @@ All new commands must include usage docs and tests. Breaking CLI changes require
 - `aaa init verify-ci` - verify lint/test/eval checks
 - `aaa init repo-checks` - run governance repo checks
 - `aaa init --plan` - run full bootstrap from plan and emit report
+
+`aaa init apply-templates` now auto-seeds `operate_maintain_workflow_v2` assets for `aaa-docs` and `aaa-tpl-docs` templates:
+- `aaa-docs`: `bootstrap/operate_maintain_guide.md`, 4-step SOP template
+- `aaa-tpl-docs`: `operate_maintain_guide.md`, `version_index.md`, `workflow_index.md` (indexes are seeded only when absent)
 
 ## Repo-checks Guide
 集中說明：`aaa-tpl-docs/docs/repo-checks-guide.md`

@@ -315,6 +315,43 @@ def sync_workflows(target: str = "agent"):
         print(f"sync workflows -> {dest_root}")
 
 
+def sync_operate_maintain_workflow(force_index: bool = False):
+    """Sync operate_maintain_workflow_v2 capability scaffold to current repo."""
+    capability_root = REPO_ROOT / "workflows" / "operate_maintain_workflow_v2"
+    if not capability_root.exists():
+        raise ValueError(f"capability scaffold not found: {capability_root}")
+
+    copied: list[str] = []
+    skipped: list[str] = []
+    for src in capability_root.rglob("*"):
+        if src.is_dir():
+            continue
+        rel = src.relative_to(capability_root)
+        dest = Path.cwd() / rel
+        is_index_file = rel.as_posix() in {
+            "aaa-tpl-docs/version_index.md",
+            "aaa-tpl-docs/workflow_index.md",
+        }
+        if is_index_file and dest.exists() and not force_index:
+            skipped.append(rel.as_posix())
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        copied.append(rel.as_posix())
+
+    msg = {
+        "capability": "operate_maintain_workflow_v2",
+        "source": str(capability_root),
+        "copied": copied,
+        "skipped": skipped,
+        "force_index": force_index,
+    }
+    if typer:
+        typer.echo(json.dumps(msg, ensure_ascii=True))
+    else:
+        print(json.dumps(msg, ensure_ascii=True))
+
+
 if typer:
     @app.command()
     def lint():
@@ -373,6 +410,7 @@ if typer:
     sync_typer = typer.Typer(no_args_is_help=True)
     sync_typer.command("skills")(sync_skills)
     sync_typer.command("workflows")(sync_workflows)
+    sync_typer.command("operate-maintain-workflow")(sync_operate_maintain_workflow)
     app.add_typer(sync_typer, name="sync")
     app.add_typer(init_commands.init_app, name="init")
     app.add_typer(run_typer, name="run")
@@ -405,6 +443,8 @@ def _run_fallback() -> int:
     sync_skills_parser.add_argument("--target", default="codex")
     sync_workflows_parser = sync_sub.add_parser("workflows")
     sync_workflows_parser.add_argument("--target", default="agent")
+    sync_omw_parser = sync_sub.add_parser("operate-maintain-workflow")
+    sync_omw_parser.add_argument("--force-index", action="store_true")
 
     init_parser = subparsers.add_parser("init")
     init_parser.add_argument("--plan")
@@ -541,6 +581,9 @@ def _run_fallback() -> int:
             return 0
         if args.sync_command == "workflows":
             sync_workflows(args.target)
+            return 0
+        if args.sync_command == "operate-maintain-workflow":
+            sync_operate_maintain_workflow(args.force_index)
             return 0
         parser.error("sync requires a subcommand")
 
