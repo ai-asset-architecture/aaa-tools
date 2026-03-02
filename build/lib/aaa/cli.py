@@ -298,8 +298,8 @@ def sync_operate_maintain_workflow(force_index: bool = False):
         rel = src.relative_to(capability_root)
         dest = Path.cwd() / rel
         is_index_file = rel.as_posix() in {
-            "aaa-tpl-docs/version_index.md",
-            "aaa-tpl-docs/workflow_index.md",
+            "aaa-tpl-docs/ops/index/version_index.md",
+            "aaa-tpl-docs/ops/index/workflow_index.md",
         }
         if is_index_file and dest.exists() and not force_index:
             skipped.append(rel.as_posix())

@@ -20,8 +20,8 @@
 
 ## 2. Canonical Data Sources（MUST）
 下列兩份 index 檔是版本/工作流程頁面的原始資料來源（raw data SSOT）：
-- `aaa-tpl-docs/version_index.md`
-- `aaa-tpl-docs/workflow_index.md`
+- `aaa-tpl-docs/ops/index/version_index.md`
+- `aaa-tpl-docs/ops/index/workflow_index.md`
 
 規則：
 1. 新版本開發時，Step1 必須先更新對應 index。
@@ -46,10 +46,10 @@
 **目標**：先鎖規格、邊界與驗收，再進入實作。
 
 允許範圍（Step1）：
-- `docs/plans/**`
-- `docs/audits/**`
-- `docs/reviews/**`
-- `docs/contracts/**`
+- `internal/development/plans/**`
+- `internal/development/audits/**`
+- `internal/development/reviews/**`
+- `internal/development/contracts/**`
 - `scripts/gates/**`
 - `.github/workflows/**`（僅草案）
 
@@ -59,15 +59,15 @@
 - runtime/build config（如 `package.json`, `tsconfig*`, `next.config*`）
 
 必備交付：
-1. Plan：`docs/plans/YYYY-MM-DD-<version>-<name>-plan.md`
-2. Audit：`docs/audits/YYYY-MM-DD-<version>-<name>-audit.md`
-3. Diff Paths：`docs/reviews/YYYY-MM-DD-<version>-<name>-diff-paths.md`
+1. Plan：`internal/development/plans/YYYY-MM-DD-<version>-<name>-plan.md`
+2. Audit：`internal/development/audits/YYYY-MM-DD-<version>-<name>-audit.md`
+3. Diff Paths：`internal/development/reviews/YYYY-MM-DD-<version>-<name>-diff-paths.md`
 4. Schema：至少 1 份 `*.schema.json`
 5. Examples：至少 1 份 pass + 1 份 fail
 
 Index 更新（Step1 Blocking）：
-1. 必須追加/更新 `aaa-tpl-docs/version_index.md` 對應版本列。
-2. 若涉及 workflow，必須追加/更新 `aaa-tpl-docs/workflow_index.md` 對應列。
+1. 必須追加/更新 `aaa-tpl-docs/ops/index/version_index.md` 對應版本列。
+2. 若涉及 workflow，必須追加/更新 `aaa-tpl-docs/ops/index/workflow_index.md` 對應列。
 3. 排序必須維持：日期 DESC；同日期下版本或 ID DESC。
 4. Step1 允許 placeholder `run_ref=N/A (step2-pending)`，但不得宣稱 Step2 PASS。
 
@@ -124,17 +124,17 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 
 AAA Valuable Assets（MUST）：
 1. Templates：
-   - 例：`docs/templates/**`、可被繼承專案直接套用的 SOP/規格模板。
+   - 例：`internal/development/templates/**`、可被繼承專案直接套用的 SOP/規格模板。
 2. Prompts：
    - 例：`prompts/**`、agent/system prompt bundles、審核提示詞。
 3. Contracts：
-   - 例：`docs/contracts/**/*.schema.json`、reason-codes、pass/fail fixtures。
+   - 例：`internal/development/contracts/**/*.schema.json`、reason-codes、pass/fail fixtures。
 4. Workflows/Gates：
    - 例：`.github/workflows/*.yml`、`scripts/gates/**`。
 5. Evals/Test Assets：
    - 例：`evals/**`、測試資料、驗證案例與 replay inputs。
 6. Runbooks/Operational Guides：
-   - 例：`docs/runbooks/**`、`docs/reviews/*-checklist.md`。
+   - 例：`internal/development/runbooks/**`、`internal/development/reviews/*-checklist.md`。
 7. UI/Observability Assets（若有）：
    - 例：dashboard spec、MCP screenshots、ops/version page mapping docs。
 
@@ -144,10 +144,10 @@ AAA Valuable Assets（MUST）：
 3. Step3 必須明確標示每項資產來自 Step1 或 Step2，不得混寫為不明來源。
 
 最小保存交付（MUST）：
-1. `docs/evidence/<version>/<asset>/result.json`
-2. `docs/evidence/<version>/<asset>/index.json`
-3. `docs/evidence/<version>/<asset>/run-evidence.md`
-4. `docs/evidence/<version>/<asset>/asset-manifest.v0.1.json`
+1. `internal/development/evidence/<version>/<asset>/result.json`
+2. `internal/development/evidence/<version>/<asset>/index.json`
+3. `internal/development/evidence/<version>/<asset>/run-evidence.md`
+4. `internal/development/evidence/<version>/<asset>/asset-manifest.v0.1.json`
    - 至少欄位：`asset_id`, `asset_type`, `source_step`, `source_paths`, `reuse_target`, `owner`, `digest`
 
 Value Gate（MUST）：
@@ -173,9 +173,9 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 **目標**：鎖定版本、同步索引、完成可審計閉環。
 
 必備文件：
-1. `docs/milestones/YYYYMMDD_vX.Y_<name>.md`
-2. `docs/milestones/completion-reports/vX.Y_completion_report_YYYYMMDD.md`
-3. `docs/reviews/<YYYY-MM-DD>-<version>-playbook-compliance-checklist.md`
+1. `internal/development/milestones/YYYYMMDD_vX.Y_<name>.md`
+2. `internal/development/milestones/completion-reports/vX.Y_completion_report_YYYYMMDD.md`
+3. `internal/development/reviews/<YYYY-MM-DD>-<version>-playbook-compliance-checklist.md`
 
 必做同步：
 1. `version_index.md`：狀態更新為最終狀態（NORMAL: `COMPLETED` / BRIDGE: `COMPLETED_STEP1`）
@@ -198,7 +198,7 @@ ExitChecklistVerdict: PASS|FAIL|N/A
 ```
 - [ ] completion report 已建立
 - [ ] milestone 摘要已建立
-- [ ] playbook compliance checklist 已建立（`docs/reviews/<date>-<version>-playbook-compliance-checklist.md`）
+- [ ] playbook compliance checklist 已建立（`internal/development/reviews/<date>-<version>-playbook-compliance-checklist.md`）
 - [ ] index 同步完成（version/workflow）
 - [ ] Step4 MCP 5頁驗證證據存在
 - [ ] completion claim 與 remote evidence 一致

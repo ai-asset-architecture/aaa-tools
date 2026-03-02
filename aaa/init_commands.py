@@ -232,8 +232,8 @@ def _seed_operate_maintain_workflow_v2(target_dir: Path, template: str) -> list[
             overwrite=True,
         )
         # System-maintained raw indexes: seed only when absent.
-        _copy_if_exists("aaa-tpl-docs/version_index.md", "version_index.md", overwrite=False)
-        _copy_if_exists("aaa-tpl-docs/workflow_index.md", "workflow_index.md", overwrite=False)
+        _copy_if_exists("aaa-tpl-docs/ops/index/version_index.md", "version_index.md", overwrite=False)
+        _copy_if_exists("aaa-tpl-docs/ops/index/workflow_index.md", "workflow_index.md", overwrite=False)
 
     return copied
 

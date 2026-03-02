@@ -40,9 +40,9 @@ def _parse_markdown(path: Path) -> GuideSummary:
     pending_checklist_step: str | None = None
 
     for line in lines:
-        if "aaa-tpl-docs/version_index.md" in line:
+        if "aaa-tpl-docs/ops/index/version_index.md" in line:
             has_version_index_ref = True
-        if "aaa-tpl-docs/workflow_index.md" in line:
+        if "aaa-tpl-docs/ops/index/workflow_index.md" in line:
             has_workflow_index_ref = True
 
         m = SECTION_RE.match(line)
@@ -117,9 +117,9 @@ def _compare(core: GuideSummary, tpl: GuideSummary) -> Tuple[bool, List[str]]:
         errors.append("canonical enums mismatch between core and template")
 
     if not tpl.has_version_index_ref:
-        errors.append("template guide missing aaa-tpl-docs/version_index.md reference")
+        errors.append("template guide missing aaa-tpl-docs/ops/index/version_index.md reference")
     if not tpl.has_workflow_index_ref:
-        errors.append("template guide missing aaa-tpl-docs/workflow_index.md reference")
+        errors.append("template guide missing aaa-tpl-docs/ops/index/workflow_index.md reference")
 
     return (len(errors) == 0, errors)
 

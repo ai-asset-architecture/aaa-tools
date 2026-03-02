@@ -30,7 +30,7 @@ def test_sync_operate_maintain_workflow_preserves_existing_indexes(tmp_path):
 
     payload = json.loads(result.stdout.strip().splitlines()[-1])
     assert payload["capability"] == "operate_maintain_workflow_v2"
-    assert "aaa-tpl-docs/version_index.md" in payload["skipped"]
+    assert "aaa-tpl-docs/ops/index/version_index.md" in payload["skipped"]
     assert existing.read_text(encoding="utf-8") == "# custom version index\n"
     assert (tmp_path / "aaa-tpl-docs" / "workflow_index.md").exists()
     assert (tmp_path / "aaa-docs" / "bootstrap" / "operate_maintain_guide.md").exists()
@@ -46,5 +46,5 @@ def test_sync_operate_maintain_workflow_force_index_overwrites(tmp_path):
 
     payload = json.loads(result.stdout.strip().splitlines()[-1])
     assert payload["force_index"] is True
-    assert "aaa-tpl-docs/workflow_index.md" in payload["copied"]
+    assert "aaa-tpl-docs/ops/index/workflow_index.md" in payload["copied"]
     assert existing.read_text(encoding="utf-8").startswith("# Workflow Index (Canonical Source)")

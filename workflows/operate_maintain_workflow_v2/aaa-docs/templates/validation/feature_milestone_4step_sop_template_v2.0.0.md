@@ -33,8 +33,8 @@ usage: 'Use this template to execute Step1~Step4 with machine-checkable evidence
 - [ ] docs/contracts/examples/fail/{name}.fail.json
 
 ## Index Update (Step1 Blocking)
-- [ ] aaa-tpl-docs/version_index.md append/update done
-- [ ] aaa-tpl-docs/workflow_index.md append/update done (if workflow involved)
+- [ ] aaa-tpl-docs/ops/index/version_index.md append/update done
+- [ ] aaa-tpl-docs/ops/index/workflow_index.md append/update done (if workflow involved)
 
 ## Triple-Summary Protocol
 ### 1. Strategic Plan
