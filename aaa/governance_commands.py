@@ -4,6 +4,7 @@ from typing import Any
 from . import context_runtime_preflight
 from . import governance_index
 from . import multi_repo_worktree_identity
+from . import runtime_adoption_readiness_inspect
 from . import session_readiness_state
 from . import tool_command_adoption
 
@@ -47,3 +48,7 @@ def validate_context_runtime_preflight_cli(*, bundle: str) -> dict[str, Any]:
 
 def validate_session_readiness_state_cli(*, bundle: str) -> dict[str, Any]:
     return session_readiness_state.validate_bundle_file(bundle)
+
+
+def readiness_inspect_cli(*, bundle: str) -> dict[str, Any]:
+    return runtime_adoption_readiness_inspect.validate_bundle_file(bundle)

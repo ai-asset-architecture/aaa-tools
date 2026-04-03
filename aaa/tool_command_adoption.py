@@ -16,6 +16,30 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "authority_class": ["mutation_repo"],
         "evidence_class": ["registry_update", "artifact_report"],
     },
+    "governance.validate-tool-command-adoption": {
+        "tool_scope": "repo_level",
+        "applicability_target": ["canonical_repo_root", "legal_worktree_instance"],
+        "authority_class": ["read_only", "analysis_only"],
+        "evidence_class": ["audit_evidence", "completion_evidence"],
+    },
+    "governance.validate-multi-repo-worktree-identity": {
+        "tool_scope": "worktree_level",
+        "applicability_target": ["canonical_repo_root", "legal_worktree_instance"],
+        "authority_class": ["read_only", "analysis_only"],
+        "evidence_class": ["audit_evidence", "completion_evidence"],
+    },
+    "governance.validate-context-runtime-preflight": {
+        "tool_scope": "artifact_level",
+        "applicability_target": ["docs_artifact", "registry_snapshot"],
+        "authority_class": ["read_only", "analysis_only"],
+        "evidence_class": ["audit_evidence", "completion_evidence"],
+    },
+    "governance.validate-session-readiness-state": {
+        "tool_scope": "artifact_level",
+        "applicability_target": ["completion_report", "audit_bundle"],
+        "authority_class": ["read_only", "analysis_only"],
+        "evidence_class": ["audit_evidence", "completion_evidence"],
+    },
 }
 
 
@@ -27,6 +51,22 @@ COMMAND_REGISTRY: dict[str, dict[str, Any]] = {
         "governance_dependency_refs": [
             "aaa-tpl-docs/internal/development/contracts/ops/tool-contract.v0.1.md",
             "aaa-tpl-docs/internal/development/contracts/ops/command-registry-contract.v0.1.md",
+        ],
+    },
+    "readiness-inspect": {
+        "tool_chain_refs": [
+            "governance.validate-tool-command-adoption",
+            "governance.validate-multi-repo-worktree-identity",
+            "governance.validate-context-runtime-preflight",
+            "governance.validate-session-readiness-state",
+        ],
+        "allowed_authority": ["read_only", "analysis_only"],
+        "expected_output_artifact": ["readiness_state_report"],
+        "governance_dependency_refs": [
+            "aaa-tpl-docs/internal/development/contracts/ops/tool-contract.v0.1.md",
+            "aaa-tpl-docs/internal/development/contracts/ops/command-registry-contract.v0.1.md",
+            "aaa-tpl-docs/internal/development/contracts/ops/context-assembly-contract.v0.1.md",
+            "aaa-tpl-docs/internal/development/contracts/ops/governance-source-precedence-and-change-law.v0.1.md",
         ],
     }
 }
