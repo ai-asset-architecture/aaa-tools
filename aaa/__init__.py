@@ -5,6 +5,7 @@ from . import governance_commands
 from . import governance_index
 from . import multi_repo_worktree_identity
 from . import runbook_runtime
+from . import session_readiness_state
 from . import tool_command_adoption
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "governance_index",
     "multi_repo_worktree_identity",
     "runbook_runtime",
+    "session_readiness_state",
     "tool_command_adoption",
 ]
