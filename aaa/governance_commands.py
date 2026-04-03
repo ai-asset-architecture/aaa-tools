@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 
+from . import context_runtime_preflight
 from . import governance_index
 from . import multi_repo_worktree_identity
 from . import tool_command_adoption
@@ -37,3 +38,7 @@ def validate_tool_command_adoption_cli(*, bundle: str) -> dict[str, Any]:
 
 def validate_multi_repo_worktree_identity_cli(*, bundle: str) -> dict[str, Any]:
     return multi_repo_worktree_identity.validate_bundle_file(bundle)
+
+
+def validate_context_runtime_preflight_cli(*, bundle: str) -> dict[str, Any]:
+    return context_runtime_preflight.validate_bundle_file(bundle)
