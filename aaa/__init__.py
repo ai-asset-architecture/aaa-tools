@@ -3,6 +3,7 @@ from . import check_commands
 from . import governance_commands
 from . import governance_index
 from . import runbook_runtime
+from . import tool_command_adoption
 
 __all__ = [
     "audit_commands",
@@ -11,4 +12,5 @@ __all__ = [
     "governance_commands",
     "governance_index",
     "runbook_runtime",
+    "tool_command_adoption",
 ]

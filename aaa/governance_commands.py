@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 
 from . import governance_index
+from . import tool_command_adoption
 
 
 def update_index_cli(
@@ -27,3 +28,7 @@ def update_index_cli(
         hash_algo=hash_algo,
         dry_run=dry_run,
     )
+
+
+def validate_tool_command_adoption_cli(*, bundle: str) -> dict[str, Any]:
+    return tool_command_adoption.validate_bundle_file(bundle)
