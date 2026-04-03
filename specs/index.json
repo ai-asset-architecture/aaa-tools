@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-29T18:06:04Z",
+  "generated_at": "2026-04-03T17:39:04Z",
   "source_dir": "aaa-tools/specs",
   "hash_algo": "sha256",
   "files": [
@@ -15,6 +15,27 @@
       "title": "Control Plane Command Contract (v1.1)",
       "hash": "a7ce82817b31a14967627534a5896ee688fb94ff03f18f920da3f66b7202af2a",
       "last_modified": "2026-01-29",
+      "metadata": {}
+    },
+    {
+      "path": "ops/tool-contract-adapter.v0.1.md",
+      "title": "AAA Tool Contract Adapter (v0.1)",
+      "hash": "667fee928f714ec66845ebf3bf6bad670ee992e5ea175a38185388ed320aa6fe",
+      "last_modified": "2026-04-04",
+      "metadata": {}
+    },
+    {
+      "path": "ops/command-registry-adapter.v0.1.md",
+      "title": "AAA Command Registry Adapter (v0.1)",
+      "hash": "067010ad5089ff139f820a70aed713d89bf80b9dae9a00962abafff6610c64c1",
+      "last_modified": "2026-04-04",
+      "metadata": {}
+    },
+    {
+      "path": "ops/context-assembly-adapter.v0.1.md",
+      "title": "AAA Context Assembly Adapter (v0.1)",
+      "hash": "acfa9276f2d0a350c8f98331695fee7cb8f4febe167d73d827106ba1db8915e0",
+      "last_modified": "2026-04-04",
       "metadata": {}
     },
     {
