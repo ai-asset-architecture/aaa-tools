@@ -2,6 +2,7 @@ from . import audit_commands
 from . import check_commands
 from . import governance_commands
 from . import governance_index
+from . import multi_repo_worktree_identity
 from . import runbook_runtime
 from . import tool_command_adoption
 
@@ -11,6 +12,7 @@ __all__ = [
     "check_commands",
     "governance_commands",
     "governance_index",
+    "multi_repo_worktree_identity",
     "runbook_runtime",
     "tool_command_adoption",
 ]
