@@ -18,7 +18,9 @@ jobs:
           python-version: "3.11"
 
       - name: Install package
-        run: pip install -e .
+        run: |
+          pip install -e .
+          pip install pytest
 
       - name: Run tests
         run: pytest tests/test_supported_bootstrap_gate_chain.py -q
