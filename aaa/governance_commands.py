@@ -19,6 +19,7 @@ from . import skill_and_plugin_extension_runtime
 from . import shared_command_dispatch_runtime
 from . import structured_output_and_result_normalization_plane
 from . import topology_aware_init_plan_validation
+from . import topology_aware_materialization_and_bootstrap_mapping
 from . import topology_aware_offering_package_definition_resolution
 from . import topology_aware_prerequisite_gate
 from . import tool_command_adoption
@@ -137,3 +138,7 @@ def topology_aware_offering_package_definition_resolution_cli(*, bundle: str) ->
 
 def topology_aware_prerequisite_gate_cli(*, bundle: str) -> dict[str, Any]:
     return topology_aware_prerequisite_gate.validate_bundle_file(bundle)
+
+
+def topology_aware_materialization_and_bootstrap_mapping_cli(*, bundle: str) -> dict[str, Any]:
+    return topology_aware_materialization_and_bootstrap_mapping.validate_bundle_file(bundle)
