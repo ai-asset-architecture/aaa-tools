@@ -14,6 +14,7 @@ from . import session_context_snapshot_runtime
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
 from . import tool_command_adoption
+from . import tool_progress_and_runtime_event_stream
 
 __all__ = [
     "audit_commands",
@@ -33,4 +34,5 @@ __all__ = [
     "session_readiness_state",
     "shared_command_dispatch_runtime",
     "tool_command_adoption",
+    "tool_progress_and_runtime_event_stream",
 ]

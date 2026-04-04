@@ -13,6 +13,7 @@ from . import session_context_snapshot_runtime
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
 from . import tool_command_adoption
+from . import tool_progress_and_runtime_event_stream
 
 
 def update_index_cli(
@@ -82,3 +83,7 @@ def query_orchestration_cli(*, bundle: str) -> dict[str, Any]:
 
 def permission_gate_cli(*, bundle: str) -> dict[str, Any]:
     return permission_and_authorization_runtime_gate.validate_bundle_file(bundle)
+
+
+def event_stream_cli(*, bundle: str) -> dict[str, Any]:
+    return tool_progress_and_runtime_event_stream.validate_bundle_file(bundle)
