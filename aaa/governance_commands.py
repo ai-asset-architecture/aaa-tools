@@ -17,6 +17,7 @@ from . import session_persistence_and_transcript_compaction
 from . import session_readiness_state
 from . import skill_and_plugin_extension_runtime
 from . import shared_command_dispatch_runtime
+from . import offering_package_definition_resolution
 from . import offering_package_selection_runtime_baseline
 from . import structured_output_and_result_normalization_plane
 from . import topology_aware_init_plan_validation
@@ -133,6 +134,10 @@ def composition_root_cli(*, bundle: str) -> dict[str, Any]:
 
 def offering_package_selection_runtime_baseline_cli(*, bundle: str) -> dict[str, Any]:
     return offering_package_selection_runtime_baseline.validate_bundle_file(bundle)
+
+
+def offering_package_definition_resolution_cli(*, bundle: str) -> dict[str, Any]:
+    return offering_package_definition_resolution.validate_bundle_file(bundle)
 
 
 def topology_aware_init_plan_validation_cli(*, bundle: str) -> dict[str, Any]:

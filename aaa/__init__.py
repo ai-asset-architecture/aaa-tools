@@ -6,6 +6,7 @@ from . import governance_index
 from . import multi_repo_worktree_identity
 from . import permission_and_authorization_runtime_gate
 from . import offering_package_selection_runtime_baseline
+from . import offering_package_definition_resolution
 from . import query_orchestration_runtime
 from . import repo_check_runtime_adoption
 from . import result_artifact_eligibility_and_evidence_promotion_gate
@@ -34,6 +35,7 @@ __all__ = [
     "governance_index",
     "multi_repo_worktree_identity",
     "offering_package_selection_runtime_baseline",
+    "offering_package_definition_resolution",
     "permission_and_authorization_runtime_gate",
     "query_orchestration_runtime",
     "repo_check_runtime_adoption",
