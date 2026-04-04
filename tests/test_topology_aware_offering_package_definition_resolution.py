@@ -56,17 +56,32 @@ def test_mother_draft_reference_is_required():
     assert "source_definition_artifact_ref" in result["error_codes"]
 
 
+def _resolve_tpl_docs_example(example_name: str) -> Path:
+    repo_root = Path(__file__).resolve().parents[1]
+    workspace_root = repo_root.parent
+    candidates = [
+        repo_root / "aaa-tpl-docs",
+        workspace_root / "aaa-tpl-docs",
+    ]
+    for candidate_root in candidates:
+        candidate = (
+            candidate_root
+            / "internal"
+            / "development"
+            / "contracts"
+            / "ops"
+            / "examples"
+            / "pass"
+            / example_name
+        )
+        if candidate.exists():
+            return candidate
+    return candidates[0] / "internal" / "development" / "contracts" / "ops" / "examples" / "pass" / example_name
+
+
 def test_validate_bundle_file_uses_canonical_fixture():
-    bundle_path = (
-        Path(__file__).resolve().parents[2]
-        / "aaa-tpl-docs"
-        / "internal"
-        / "development"
-        / "contracts"
-        / "ops"
-        / "examples"
-        / "pass"
-        / "2026-04-04-v2.1.32-topology-aware-offering-package-definition-resolution.pass.json"
+    bundle_path = _resolve_tpl_docs_example(
+        "2026-04-04-v2.1.32-topology-aware-offering-package-definition-resolution.pass.json"
     )
 
     result = runtime.validate_bundle_file(bundle_path)
