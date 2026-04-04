@@ -19,6 +19,7 @@ from . import skill_and_plugin_extension_runtime
 from . import shared_command_dispatch_runtime
 from . import structured_output_and_result_normalization_plane
 from . import topology_aware_init_plan_validation
+from . import topology_aware_offering_package_definition_resolution
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
 from . import workflow_and_runbook_orchestration_runtime
@@ -127,3 +128,7 @@ def composition_root_cli(*, bundle: str) -> dict[str, Any]:
 
 def topology_aware_init_plan_validation_cli(*, bundle: str) -> dict[str, Any]:
     return topology_aware_init_plan_validation.validate_bundle_file(bundle)
+
+
+def topology_aware_offering_package_definition_resolution_cli(*, bundle: str) -> dict[str, Any]:
+    return topology_aware_offering_package_definition_resolution.validate_bundle_file(bundle)

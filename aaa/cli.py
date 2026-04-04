@@ -541,6 +541,26 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("topology-aware-offering-package-definition-resolution")
+    def governance_topology_aware_offering_package_definition_resolution(
+        bundle: Path = typer.Option(
+            ...,
+            "--bundle",
+            help="Path to topology-aware offering package definition resolution bundle JSON",
+        ),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate topology-aware offering package definition resolution bundle against mother-draft boundaries."""
+        payload = governance_commands.topology_aware_offering_package_definition_resolution_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @ops_typer.command("render-dashboard")
     def ops_render_dashboard(
         input_path: Path = typer.Option(..., "--input", help="Input JSON file"),

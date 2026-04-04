@@ -1,0 +1,47 @@
+name: v2.1.32 Topology-Aware Offering Package Definition Resolution
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  topology-aware-offering-package-definition-resolution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout aaa-tools
+        uses: actions/checkout@v4
+
+      - name: Checkout aaa-tpl-docs
+        uses: actions/checkout@v4
+        with:
+          repository: ai-asset-architecture/aaa-tpl-docs
+          path: aaa-tpl-docs
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install aaa-tools
+        run: pip install -e .
+
+      - name: Run unit tests
+        run: pytest tests/test_topology_aware_offering_package_definition_resolution.py -q
+
+      - name: Validate canonical pass bundle
+        run: >
+          python -m aaa.cli governance topology-aware-offering-package-definition-resolution
+          --bundle aaa-tpl-docs/internal/development/contracts/ops/examples/pass/2026-04-04-v2.1.32-topology-aware-offering-package-definition-resolution.pass.json
+          --format json
+
+      - name: Validate canonical fail bundle
+        run: |
+          set +e
+          python -m aaa.cli governance topology-aware-offering-package-definition-resolution \
+            --bundle aaa-tpl-docs/internal/development/contracts/ops/examples/fail/2026-04-04-v2.1.32-topology-aware-offering-package-definition-resolution.fail.json \
+            --format json
+          status=$?
+          set -e
+          test "$status" -eq 2
