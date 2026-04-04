@@ -38,7 +38,7 @@ jobs:
           pip install -e .
 
       - name: Run v2.1.31 unit tests
-        run: python -m pytest tests/test_init_plan_presets.py tests/test_topology_aware_init_plan_validation.py -q
+        run: python -m pytest tests/test_init_plan_presets.py tests/test_topology_aware_init_plan_validation.py tests/test_init_topology_boundary_behavior.py -q
 
       - name: Validate canonical topology-aware init pass bundle
         run: |
