@@ -20,6 +20,7 @@ from . import shared_command_dispatch_runtime
 from . import offering_package_definition_resolution
 from . import offering_package_materialization_and_bootstrap_mapping
 from . import offering_package_prerequisite_gate
+from . import offering_package_status_and_evidence_runtime
 from . import offering_package_selection_runtime_baseline
 from . import structured_output_and_result_normalization_plane
 from . import topology_aware_init_plan_validation
@@ -148,6 +149,10 @@ def offering_package_prerequisite_gate_cli(*, bundle: str) -> dict[str, Any]:
 
 def offering_package_materialization_and_bootstrap_mapping_cli(*, bundle: str) -> dict[str, Any]:
     return offering_package_materialization_and_bootstrap_mapping.validate_bundle_file(bundle)
+
+
+def offering_package_status_and_evidence_runtime_cli(*, bundle: str) -> dict[str, Any]:
+    return offering_package_status_and_evidence_runtime.validate_bundle_file(bundle)
 
 
 def topology_aware_init_plan_validation_cli(*, bundle: str) -> dict[str, Any]:
