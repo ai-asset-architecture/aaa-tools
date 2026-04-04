@@ -7,6 +7,7 @@ from . import multi_repo_worktree_identity
 from . import repo_check_runtime_adoption
 from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
+from . import session_context_snapshot_runtime
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
 from . import tool_command_adoption
@@ -67,3 +68,7 @@ def shared_command_dispatch_cli(*, dispatch_bundle: str, command_bundle: str) ->
 
 def result_evidence_promotion_gate_cli(*, bundle: str) -> dict[str, Any]:
     return result_artifact_eligibility_and_evidence_promotion_gate.validate_bundle_file(bundle)
+
+
+def session_context_snapshot_cli(*, bundle: str) -> dict[str, Any]:
+    return session_context_snapshot_runtime.validate_bundle_file(bundle)

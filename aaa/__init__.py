@@ -8,6 +8,7 @@ from . import repo_check_runtime_adoption
 from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
 from . import runbook_runtime
+from . import session_context_snapshot_runtime
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
 from . import tool_command_adoption
@@ -24,6 +25,7 @@ __all__ = [
     "result_artifact_eligibility_and_evidence_promotion_gate",
     "runtime_adoption_readiness_inspect",
     "runbook_runtime",
+    "session_context_snapshot_runtime",
     "session_readiness_state",
     "shared_command_dispatch_runtime",
     "tool_command_adoption",
