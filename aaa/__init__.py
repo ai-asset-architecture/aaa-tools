@@ -8,6 +8,7 @@ from . import permission_and_authorization_runtime_gate
 from . import query_orchestration_runtime
 from . import repo_check_runtime_adoption
 from . import result_artifact_eligibility_and_evidence_promotion_gate
+from . import runtime_composition_root_and_system_assembly
 from . import runtime_adoption_readiness_inspect
 from . import runtime_budget_retry_and_recovery_control
 from . import runbook_runtime
@@ -35,6 +36,7 @@ __all__ = [
     "query_orchestration_runtime",
     "repo_check_runtime_adoption",
     "result_artifact_eligibility_and_evidence_promotion_gate",
+    "runtime_composition_root_and_system_assembly",
     "runtime_adoption_readiness_inspect",
     "runtime_budget_retry_and_recovery_control",
     "runbook_runtime",

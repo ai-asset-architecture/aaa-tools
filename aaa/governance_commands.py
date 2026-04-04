@@ -9,6 +9,7 @@ from . import permission_and_authorization_runtime_gate
 from . import repo_check_runtime_adoption
 from . import query_orchestration_runtime
 from . import result_artifact_eligibility_and_evidence_promotion_gate
+from . import runtime_composition_root_and_system_assembly
 from . import runtime_adoption_readiness_inspect
 from . import runtime_budget_retry_and_recovery_control
 from . import session_context_snapshot_runtime
@@ -117,3 +118,7 @@ def delegation_lifecycle_cli(*, bundle: str) -> dict[str, Any]:
 
 def extension_runtime_cli(*, bundle: str) -> dict[str, Any]:
     return skill_and_plugin_extension_runtime.validate_bundle_file(bundle)
+
+
+def composition_root_cli(*, bundle: str) -> dict[str, Any]:
+    return runtime_composition_root_and_system_assembly.validate_bundle_file(bundle)
