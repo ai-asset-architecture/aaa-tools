@@ -761,6 +761,26 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("github-governance-topology-contract-baseline")
+    def governance_github_governance_topology_contract_baseline(
+        bundle: Path = typer.Option(
+            ...,
+            "--bundle",
+            help="Path to github governance topology contract baseline bundle JSON",
+        ),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate topology contract baseline bundle against hybrid authority and dedicated-only rejection boundaries."""
+        payload = governance_commands.github_governance_topology_contract_baseline_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @governance_typer.command("github-governance-topology-composition-and-closeout")
     def governance_github_governance_topology_composition_and_closeout(
         bundle: Path = typer.Option(

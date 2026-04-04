@@ -30,6 +30,7 @@ from . import topology_aware_materialization_and_bootstrap_mapping
 from . import topology_aware_offering_package_definition_resolution
 from . import topology_aware_package_status_and_repo_checks
 from . import topology_aware_prerequisite_gate
+from . import github_governance_topology_contract_baseline
 from . import github_governance_topology_composition_and_closeout
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
@@ -183,6 +184,10 @@ def topology_aware_materialization_and_bootstrap_mapping_cli(*, bundle: str) -> 
 
 def topology_aware_package_status_and_repo_checks_cli(*, bundle: str) -> dict[str, Any]:
     return topology_aware_package_status_and_repo_checks.validate_bundle_file(bundle)
+
+
+def github_governance_topology_contract_baseline_cli(*, bundle: str) -> dict[str, Any]:
+    return github_governance_topology_contract_baseline.validate_bundle_file(bundle)
 
 
 def github_governance_topology_composition_and_closeout_cli(*, bundle: str) -> dict[str, Any]:

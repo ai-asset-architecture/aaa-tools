@@ -29,6 +29,7 @@ from . import tool_progress_and_runtime_event_stream
 from . import workflow_and_runbook_orchestration_runtime
 from . import agent_delegation_and_task_lifecycle_runtime
 from . import skill_and_plugin_extension_runtime
+from . import github_governance_topology_contract_baseline
 
 __all__ = [
     "audit_commands",
@@ -47,6 +48,7 @@ __all__ = [
     "offering_package_composition_and_closeout",
     "package_machine_interface_read_boundary",
     "permission_and_authorization_runtime_gate",
+    "github_governance_topology_contract_baseline",
     "query_orchestration_runtime",
     "repo_check_runtime_adoption",
     "result_artifact_eligibility_and_evidence_promotion_gate",
