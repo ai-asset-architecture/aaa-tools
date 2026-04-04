@@ -5,6 +5,7 @@ from . import context_runtime_preflight
 from . import governance_index
 from . import multi_repo_worktree_identity
 from . import repo_check_runtime_adoption
+from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
@@ -62,3 +63,7 @@ def repo_check_cli(*, bundle: str) -> dict[str, Any]:
 
 def shared_command_dispatch_cli(*, dispatch_bundle: str, command_bundle: str) -> dict[str, Any]:
     return shared_command_dispatch_runtime.dispatch_bundle_file(dispatch_bundle, command_bundle)
+
+
+def result_evidence_promotion_gate_cli(*, bundle: str) -> dict[str, Any]:
+    return result_artifact_eligibility_and_evidence_promotion_gate.validate_bundle_file(bundle)

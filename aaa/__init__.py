@@ -5,6 +5,7 @@ from . import governance_commands
 from . import governance_index
 from . import multi_repo_worktree_identity
 from . import repo_check_runtime_adoption
+from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
 from . import runbook_runtime
 from . import session_readiness_state
@@ -20,6 +21,7 @@ __all__ = [
     "governance_index",
     "multi_repo_worktree_identity",
     "repo_check_runtime_adoption",
+    "result_artifact_eligibility_and_evidence_promotion_gate",
     "runtime_adoption_readiness_inspect",
     "runbook_runtime",
     "session_readiness_state",
