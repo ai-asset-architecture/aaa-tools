@@ -9,6 +9,7 @@ from . import repo_check_runtime_adoption
 from . import query_orchestration_runtime
 from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
+from . import runtime_budget_retry_and_recovery_control
 from . import session_context_snapshot_runtime
 from . import session_persistence_and_transcript_compaction
 from . import session_readiness_state
@@ -92,3 +93,7 @@ def event_stream_cli(*, bundle: str) -> dict[str, Any]:
 
 def session_persistence_cli(*, bundle: str) -> dict[str, Any]:
     return session_persistence_and_transcript_compaction.validate_bundle_file(bundle)
+
+
+def runtime_control_cli(*, bundle: str) -> dict[str, Any]:
+    return runtime_budget_retry_and_recovery_control.validate_bundle_file(bundle)

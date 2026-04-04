@@ -429,6 +429,22 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("runtime-control")
+    def governance_runtime_control(
+        bundle: Path = typer.Option(..., "--bundle", help="Path to runtime budget/retry/recovery bundle JSON"),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate runtime budget, retry, and recovery control bundle against shared control boundaries."""
+        payload = governance_commands.runtime_control_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @ops_typer.command("render-dashboard")
     def ops_render_dashboard(
         input_path: Path = typer.Option(..., "--input", help="Input JSON file"),

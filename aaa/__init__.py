@@ -9,6 +9,7 @@ from . import query_orchestration_runtime
 from . import repo_check_runtime_adoption
 from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
+from . import runtime_budget_retry_and_recovery_control
 from . import runbook_runtime
 from . import session_context_snapshot_runtime
 from . import session_persistence_and_transcript_compaction
@@ -30,6 +31,7 @@ __all__ = [
     "repo_check_runtime_adoption",
     "result_artifact_eligibility_and_evidence_promotion_gate",
     "runtime_adoption_readiness_inspect",
+    "runtime_budget_retry_and_recovery_control",
     "runbook_runtime",
     "session_context_snapshot_runtime",
     "session_persistence_and_transcript_compaction",
