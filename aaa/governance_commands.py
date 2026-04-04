@@ -10,6 +10,7 @@ from . import query_orchestration_runtime
 from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
 from . import session_context_snapshot_runtime
+from . import session_persistence_and_transcript_compaction
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
 from . import tool_command_adoption
@@ -87,3 +88,7 @@ def permission_gate_cli(*, bundle: str) -> dict[str, Any]:
 
 def event_stream_cli(*, bundle: str) -> dict[str, Any]:
     return tool_progress_and_runtime_event_stream.validate_bundle_file(bundle)
+
+
+def session_persistence_cli(*, bundle: str) -> dict[str, Any]:
+    return session_persistence_and_transcript_compaction.validate_bundle_file(bundle)
