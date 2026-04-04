@@ -19,9 +19,11 @@ from . import structured_output_and_result_normalization_plane
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
 from . import workflow_and_runbook_orchestration_runtime
+from . import agent_delegation_and_task_lifecycle_runtime
 
 __all__ = [
     "audit_commands",
+    "agent_delegation_and_task_lifecycle_runtime",
     "cli",
     "check_commands",
     "context_runtime_preflight",

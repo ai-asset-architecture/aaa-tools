@@ -477,6 +477,22 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("delegation-lifecycle")
+    def governance_delegation_lifecycle(
+        bundle: Path = typer.Option(..., "--bundle", help="Path to agent delegation and task lifecycle runtime bundle JSON"),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate delegation lifecycle runtime bundle against handoff and verification boundaries."""
+        payload = governance_commands.delegation_lifecycle_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @ops_typer.command("render-dashboard")
     def ops_render_dashboard(
         input_path: Path = typer.Option(..., "--input", help="Input JSON file"),

@@ -4,6 +4,7 @@ from typing import Any
 from . import context_runtime_preflight
 from . import governance_index
 from . import multi_repo_worktree_identity
+from . import agent_delegation_and_task_lifecycle_runtime
 from . import permission_and_authorization_runtime_gate
 from . import repo_check_runtime_adoption
 from . import query_orchestration_runtime
@@ -107,3 +108,7 @@ def result_normalization_cli(*, bundle: str) -> dict[str, Any]:
 
 def workflow_runtime_cli(*, bundle: str) -> dict[str, Any]:
     return workflow_and_runbook_orchestration_runtime.validate_bundle_file(bundle)
+
+
+def delegation_lifecycle_cli(*, bundle: str) -> dict[str, Any]:
+    return agent_delegation_and_task_lifecycle_runtime.validate_bundle_file(bundle)
