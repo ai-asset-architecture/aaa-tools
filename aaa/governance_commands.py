@@ -5,6 +5,7 @@ from . import context_runtime_preflight
 from . import governance_index
 from . import multi_repo_worktree_identity
 from . import repo_check_runtime_adoption
+from . import query_orchestration_runtime
 from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
 from . import session_context_snapshot_runtime
@@ -72,3 +73,7 @@ def result_evidence_promotion_gate_cli(*, bundle: str) -> dict[str, Any]:
 
 def session_context_snapshot_cli(*, bundle: str) -> dict[str, Any]:
     return session_context_snapshot_runtime.validate_bundle_file(bundle)
+
+
+def query_orchestration_cli(*, bundle: str) -> dict[str, Any]:
+    return query_orchestration_runtime.validate_bundle_file(bundle)

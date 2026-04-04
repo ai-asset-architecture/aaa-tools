@@ -365,6 +365,22 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("query-orchestration")
+    def governance_query_orchestration(
+        bundle: Path = typer.Option(..., "--bundle", help="Path to query orchestration runtime bundle JSON"),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate query orchestration runtime bundle against dispatch/result/snapshot boundaries."""
+        payload = governance_commands.query_orchestration_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @ops_typer.command("render-dashboard")
     def ops_render_dashboard(
         input_path: Path = typer.Option(..., "--input", help="Input JSON file"),

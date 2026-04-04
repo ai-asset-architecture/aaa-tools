@@ -4,6 +4,7 @@ from . import context_runtime_preflight
 from . import governance_commands
 from . import governance_index
 from . import multi_repo_worktree_identity
+from . import query_orchestration_runtime
 from . import repo_check_runtime_adoption
 from . import result_artifact_eligibility_and_evidence_promotion_gate
 from . import runtime_adoption_readiness_inspect
@@ -21,6 +22,7 @@ __all__ = [
     "governance_commands",
     "governance_index",
     "multi_repo_worktree_identity",
+    "query_orchestration_runtime",
     "repo_check_runtime_adoption",
     "result_artifact_eligibility_and_evidence_promotion_gate",
     "runtime_adoption_readiness_inspect",
