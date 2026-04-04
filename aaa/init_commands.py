@@ -88,6 +88,7 @@ _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 DEFAULT_GATE_WORKFLOW = (
     "ai-asset-architecture/aaa-actions/.github/workflows/reusable-gate.yaml@main"
 )
+LOCAL_SANDBOX_PROFILE = "local_sandbox"
 
 
 @dataclass
@@ -193,6 +194,81 @@ def _resolve_report_path(log_dir: Optional[Path], workspace_dir: Path) -> Path:
     report_path = log_dir / "aaa-init-report.json" if log_dir else workspace_dir / "aaa-init-report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     return report_path
+
+
+def _is_local_sandbox_profile(profile: Optional[str]) -> bool:
+    return str(profile or "").strip() == LOCAL_SANDBOX_PROFILE
+
+
+def _execution_profile_payload(profile: Optional[str], workspace_dir: Path) -> dict[str, Any]:
+    if not _is_local_sandbox_profile(profile):
+        return {
+            "profile_name": "default",
+            "profile_class": "standard_bootstrap_environment",
+            "workspace_root": str(workspace_dir),
+        }
+    return {
+        "profile_name": LOCAL_SANDBOX_PROFILE,
+        "profile_class": "supported_bootstrap_environment",
+        "workspace_root": str(workspace_dir),
+        "dry_run_alias": False,
+        "requires_github_side_effects": False,
+        "requires_org_repo_creation": False,
+        "produces_bootstrap_report": True,
+        "produces_candidate_evidence_bundle": True,
+        "canonical_evidence_plane": False,
+        "requires_explicit_promotion": True,
+    }
+
+
+def _candidate_evidence_bundle_path(workspace_dir: Path) -> Path:
+    return workspace_dir / ".aaa" / "local_sandbox_bootstrap_candidate_evidence.json"
+
+
+def _write_local_sandbox_candidate_evidence_bundle(workspace_dir: Path, report_path: Path, report: dict[str, Any]) -> Path:
+    bundle_path = _candidate_evidence_bundle_path(workspace_dir)
+    bundle_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": "v0.1",
+        "profile_name": LOCAL_SANDBOX_PROFILE,
+        "profile_class": "supported_bootstrap_environment",
+        "workspace_root": str(workspace_dir),
+        "bootstrap_report_path": str(report_path),
+        "canonical_evidence_plane": False,
+        "requires_explicit_promotion": True,
+        "summary_status": report.get("summary", {}).get("status", "unknown"),
+    }
+    bundle_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    return bundle_path
+
+
+def _local_repo_dir_name(repo_name: str) -> str:
+    return repo_name
+
+
+def _local_sandbox_ensure_repos(
+    repos: list[dict[str, Any]],
+    workspace_dir: Path,
+    plan_ref: str,
+    jsonl: bool,
+    command: str,
+    step_id: str,
+) -> None:
+    for repo in repos:
+        repo_name = str(repo.get("name", "")).strip()
+        if not repo_name:
+            _emit_error_and_exit(jsonl, command, step_id, ERROR_INVALID_ARGUMENT, "repo name missing in plan")
+        repo_dir = workspace_dir / _local_repo_dir_name(repo_name)
+        repo_dir.mkdir(parents=True, exist_ok=True)
+        write_repo_metadata(repo_dir, _repo_type_from_plan(repo), plan_ref)
+        emit_jsonl(
+            jsonl,
+            event="result",
+            status="ok",
+            command=command,
+            step_id=step_id,
+            data={"repo": repo_name, "status": "local_created", "path": str(repo_dir)},
+        )
 
 
 def _write_gate_workflow(repo_root: Path, workflow_ref: str) -> None:
@@ -693,6 +769,7 @@ class _ReportBuilder:
         workspace_dir: Path,
         dry_run: bool,
         preset_name: str | None = None,
+        execution_profile: str | None = None,
     ):
         self.plan = plan
         self.plan_path = plan_path
@@ -700,6 +777,7 @@ class _ReportBuilder:
         self.workspace_dir = workspace_dir
         self.dry_run = dry_run
         self.preset_name = preset_name
+        self.execution_profile = execution_profile
         self.steps: list[dict[str, Any]] = []
         self.repos: list[dict[str, Any]] = []
         self._init_repos()
@@ -814,6 +892,7 @@ class _ReportBuilder:
                 "prs_created": prs_created,
                 "next_actions": next_actions,
                 "topology_boundary_signal": _topology_boundary_signal(self.plan, self.preset_name),
+                "execution_profile": _execution_profile_payload(self.execution_profile, self.workspace_dir),
             },
         }
         return report
@@ -890,6 +969,7 @@ def run_plan(
     plan: Optional[Path] = typer.Option(None, "--plan"),
     mode: str = typer.Option("pr", "--mode"),
     preset: Optional[str] = typer.Option(None, "--preset"),
+    profile: Optional[str] = typer.Option(None, "--profile"),
     jsonl: bool = typer.Option(False, "--jsonl"),
     log_dir: Optional[Path] = typer.Option(None, "--log-dir"),
     dry_run: bool = typer.Option(False, "--dry-run"),
@@ -953,7 +1033,15 @@ def run_plan(
             {"path": str(workspace_dir)},
         )
 
-    report_builder = _ReportBuilder(plan_data, plan, mode, workspace_dir, dry_run=dry_run, preset_name=preset)
+    report_builder = _ReportBuilder(
+        plan_data,
+        plan,
+        mode,
+        workspace_dir,
+        dry_run=dry_run,
+        preset_name=preset,
+        execution_profile=profile,
+    )
     prs_created = 0
     next_actions: list[str] = []
 
@@ -963,7 +1051,8 @@ def run_plan(
             started_at = _rfc3339_now()
 
             if step_id_value == "preflight":
-                _require_tool("gh", jsonl, command, step_id, dry_run=dry_run)
+                if not _is_local_sandbox_profile(profile):
+                    _require_tool("gh", jsonl, command, step_id, dry_run=dry_run)
                 _require_tool("git", jsonl, command, step_id, dry_run=dry_run)
                 emit_jsonl(
                     jsonl,
@@ -983,14 +1072,24 @@ def run_plan(
                 continue
 
             if step_id_value == "ensure_repos":
-                ensure_repos(
-                    org=org,
-                    from_plan=plan,
-                    preset=preset,
-                    jsonl=jsonl,
-                    log_dir=log_dir,
-                    dry_run=dry_run,
-                )
+                if _is_local_sandbox_profile(profile):
+                    _local_sandbox_ensure_repos(
+                        resolved_repos,
+                        workspace_dir,
+                        str(plan),
+                        jsonl,
+                        command,
+                        "ensure_repos",
+                    )
+                else:
+                    ensure_repos(
+                        org=org,
+                        from_plan=plan,
+                        preset=preset,
+                        jsonl=jsonl,
+                        log_dir=log_dir,
+                        dry_run=dry_run,
+                    )
                 report_builder.add_step(
                     "ensure_repos",
                     "pass",
@@ -999,19 +1098,29 @@ def run_plan(
                     step.get("commands"),
                 )
             elif step_id_value == "apply_templates":
-                aaa_tag = _aaa_version_from_plan(plan_data)
-                apply_templates(
-                    org=org,
-                    from_plan=plan,
-                    preset=preset,
-                    aaa_tag=aaa_tag,
-                    jsonl=jsonl,
-                    log_dir=log_dir,
-                    dry_run=dry_run,
-                )
+                if _is_local_sandbox_profile(profile):
+                    emit_jsonl(
+                        jsonl,
+                        event="result",
+                        status="noop",
+                        command=command,
+                        step_id="apply_templates",
+                        data={"status": "profile_deferred", "profile": LOCAL_SANDBOX_PROFILE},
+                    )
+                else:
+                    aaa_tag = _aaa_version_from_plan(plan_data)
+                    apply_templates(
+                        org=org,
+                        from_plan=plan,
+                        preset=preset,
+                        aaa_tag=aaa_tag,
+                        jsonl=jsonl,
+                        log_dir=log_dir,
+                        dry_run=dry_run,
+                    )
                 report_builder.add_step(
                     "apply_templates",
-                    "pass",
+                    "pass" if not _is_local_sandbox_profile(profile) else "skipped_profile",
                     started_at,
                     _rfc3339_now(),
                     step.get("commands"),
@@ -1044,23 +1153,33 @@ def run_plan(
                     step.get("commands"),
                 )
             elif step_id_value == "branch_protection":
-                protect(
-                    org=org,
-                    from_plan=plan,
-                    preset=preset,
-                    jsonl=jsonl,
-                    log_dir=log_dir,
-                    dry_run=dry_run,
-                )
+                if _is_local_sandbox_profile(profile):
+                    emit_jsonl(
+                        jsonl,
+                        event="result",
+                        status="noop",
+                        command=command,
+                        step_id="branch_protection",
+                        data={"status": "profile_excluded", "profile": LOCAL_SANDBOX_PROFILE},
+                    )
+                else:
+                    protect(
+                        org=org,
+                        from_plan=plan,
+                        preset=preset,
+                        jsonl=jsonl,
+                        log_dir=log_dir,
+                        dry_run=dry_run,
+                    )
                 report_builder.add_step(
                     "branch_protection",
-                    "pass",
+                    "pass" if not _is_local_sandbox_profile(profile) else "skipped_profile",
                     started_at,
                     _rfc3339_now(),
                     step.get("commands"),
                 )
             elif step_id_value == "open_prs":
-                if mode == "pr":
+                if mode == "pr" and not _is_local_sandbox_profile(profile):
                     open_prs(
                         org=org,
                         from_plan=plan,
@@ -1073,40 +1192,60 @@ def run_plan(
                         prs_created += len(report_builder.repos)
                 report_builder.add_step(
                     "open_prs",
-                    "pass" if mode == "pr" else "skipped",
+                    "pass" if mode == "pr" and not _is_local_sandbox_profile(profile) else "skipped_profile",
                     started_at,
                     _rfc3339_now(),
                     step.get("commands"),
                 )
             elif step_id_value == "ci_verify":
-                verify_ci(
-                    org=org,
-                    from_plan=plan,
-                    preset=preset,
-                    jsonl=jsonl,
-                    log_dir=log_dir,
-                    dry_run=dry_run,
-                )
+                if _is_local_sandbox_profile(profile):
+                    emit_jsonl(
+                        jsonl,
+                        event="result",
+                        status="noop",
+                        command=command,
+                        step_id="ci_verify",
+                        data={"status": "profile_excluded", "profile": LOCAL_SANDBOX_PROFILE},
+                    )
+                else:
+                    verify_ci(
+                        org=org,
+                        from_plan=plan,
+                        preset=preset,
+                        jsonl=jsonl,
+                        log_dir=log_dir,
+                        dry_run=dry_run,
+                    )
                 report_builder.add_step(
                     "ci_verify",
-                    "pass",
+                    "pass" if not _is_local_sandbox_profile(profile) else "skipped_profile",
                     started_at,
                     _rfc3339_now(),
                     step.get("commands"),
                 )
             elif step_id_value == "repo_evals":
-                repo_checks(
-                    org=org,
-                    from_plan=plan,
-                    preset=preset,
-                    suite="governance",
-                    jsonl=jsonl,
-                    log_dir=log_dir,
-                    dry_run=dry_run,
-                )
+                if _is_local_sandbox_profile(profile):
+                    emit_jsonl(
+                        jsonl,
+                        event="result",
+                        status="noop",
+                        command=command,
+                        step_id="repo_evals",
+                        data={"status": "profile_excluded", "profile": LOCAL_SANDBOX_PROFILE},
+                    )
+                else:
+                    repo_checks(
+                        org=org,
+                        from_plan=plan,
+                        preset=preset,
+                        suite="governance",
+                        jsonl=jsonl,
+                        log_dir=log_dir,
+                        dry_run=dry_run,
+                    )
                 report_builder.add_step(
                     "repo_evals",
-                    "pass",
+                    "pass" if not _is_local_sandbox_profile(profile) else "skipped_profile",
                     started_at,
                     _rfc3339_now(),
                     step.get("commands"),
@@ -1136,6 +1275,10 @@ def run_plan(
     report = report_builder.build("pass", prs_created, next_actions)
     report_path = _resolve_report_path(log_dir, workspace_dir)
     report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
+    if _is_local_sandbox_profile(profile):
+        candidate_bundle_path = _write_local_sandbox_candidate_evidence_bundle(workspace_dir, report_path, report)
+        report["summary"]["candidate_evidence_bundle_path"] = str(candidate_bundle_path)
+        report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
     emit_jsonl(
         jsonl,
         event="result",

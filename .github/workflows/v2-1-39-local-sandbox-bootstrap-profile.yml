@@ -1,0 +1,31 @@
+name: v2.1.39 Local Sandbox Bootstrap Profile
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  local-sandbox-bootstrap-profile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: |
+          pip install -e .
+          pip install pytest
+
+      - name: Run tests
+        run: pytest tests/test_local_sandbox_bootstrap_profile.py -q
+
+      - name: Smoke local sandbox profile
+        run: |
+          mkdir -p /tmp/aaa-v2139-profile
+          python -m aaa.cli bootstrap profile --profile local_sandbox --level core --topology-mode repo_local --workspace /tmp/aaa-v2139-profile --format json

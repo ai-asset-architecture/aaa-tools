@@ -894,6 +894,22 @@ if typer:
             raise typer.Exit(code=2)
         typer.echo(bootstrap_commands.render_payload(payload, output_format))
 
+    @bootstrap_typer.command("profile")
+    def bootstrap_profile(
+        profile: str = typer.Option(..., "--profile", help="local_sandbox"),
+        level: str = typer.Option(..., "--level", help="lite|core|full"),
+        topology_mode: str = typer.Option("repo_local", "--topology-mode", help="dedicated_repo|repo_local|hybrid"),
+        workspace: Path = typer.Option(Path.cwd(), "--workspace", help="Workspace root"),
+        output_format: str = typer.Option("human", "--format", help="human|json|llm"),
+    ):
+        """Show the supported bootstrap environment profile without turning it into a second public path."""
+        try:
+            payload = bootstrap_commands.profile(profile, level, topology_mode, workspace)
+        except ValueError as exc:
+            typer.echo(str(exc))
+            raise typer.Exit(code=2)
+        typer.echo(bootstrap_commands.render_payload(payload, output_format))
+
     @app.command("audit")
     def audit(
         local: bool = typer.Option(False, "--local", help="Audit current repo"),

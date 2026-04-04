@@ -1,7 +1,10 @@
 import json
+from pathlib import Path
 from typing import Any
 
 from .package_commands import PACKAGE_LEVELS, TOPOLOGY_LEVELS
+
+PROFILE_NAMES = {"local_sandbox"}
 
 
 def _assert_package_level(level: str) -> str:
@@ -16,6 +19,13 @@ def _assert_topology_mode(mode: str) -> str:
     if topology_mode not in TOPOLOGY_LEVELS:
         raise ValueError("topology mode must be one of dedicated_repo/repo_local/hybrid")
     return topology_mode
+
+
+def _assert_profile_name(profile: str) -> str:
+    profile_name = str(profile).strip()
+    if profile_name not in PROFILE_NAMES:
+        raise ValueError("profile must be local_sandbox")
+    return profile_name
 
 
 def supported_path(level: str, topology_mode: str) -> dict[str, Any]:
@@ -85,9 +95,46 @@ def supported_path(level: str, topology_mode: str) -> dict[str, Any]:
     }
 
 
+def profile(profile: str, level: str, topology_mode: str, workspace: Path) -> dict[str, Any]:
+    profile_name = _assert_profile_name(profile)
+    package_level = _assert_package_level(level)
+    resolved_topology = _assert_topology_mode(topology_mode)
+    workspace_root = Path(workspace).resolve()
+    return {
+        "command": "bootstrap_profile",
+        "runtime_plane_mode": "local_sandbox_bootstrap_profile",
+        "line_class": "outside_in_follow_up_line",
+        "profile_name": profile_name,
+        "profile_class": "supported_bootstrap_environment",
+        "package_level": package_level,
+        "topology_mode": resolved_topology,
+        "workspace_root": str(workspace_root),
+        "dry_run_alias": False,
+        "requires_github_side_effects": False,
+        "requires_org_repo_creation": False,
+        "produces_bootstrap_report": True,
+        "produces_candidate_evidence_bundle": True,
+        "supported_path_count_changed": False,
+        "profile_is_public_supported_path": False,
+        "prose_fallback_allowed": False,
+    }
+
+
 def render_payload(payload: dict[str, Any], output_format: str) -> str:
     if output_format in {"json", "llm"}:
         return json.dumps(payload, indent=2, ensure_ascii=True)
+
+    if payload.get("command") == "bootstrap_profile":
+        lines = [
+            f"command={payload['command']}",
+            f"profile_name={payload['profile_name']}",
+            f"package_level={payload['package_level']}",
+            f"topology_mode={payload['topology_mode']}",
+            f"workspace_root={payload['workspace_root']}",
+            f"dry_run_alias={str(payload['dry_run_alias']).lower()}",
+            f"supported_path_count_changed={str(payload['supported_path_count_changed']).lower()}",
+        ]
+        return "\n".join(lines)
 
     lines = [
         f"command={payload['command']}",
