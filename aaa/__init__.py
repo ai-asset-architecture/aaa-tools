@@ -20,6 +20,7 @@ from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
 from . import workflow_and_runbook_orchestration_runtime
 from . import agent_delegation_and_task_lifecycle_runtime
+from . import skill_and_plugin_extension_runtime
 
 __all__ = [
     "audit_commands",
@@ -40,6 +41,7 @@ __all__ = [
     "session_context_snapshot_runtime",
     "session_persistence_and_transcript_compaction",
     "session_readiness_state",
+    "skill_and_plugin_extension_runtime",
     "shared_command_dispatch_runtime",
     "structured_output_and_result_normalization_plane",
     "tool_command_adoption",

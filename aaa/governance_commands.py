@@ -14,6 +14,7 @@ from . import runtime_budget_retry_and_recovery_control
 from . import session_context_snapshot_runtime
 from . import session_persistence_and_transcript_compaction
 from . import session_readiness_state
+from . import skill_and_plugin_extension_runtime
 from . import shared_command_dispatch_runtime
 from . import structured_output_and_result_normalization_plane
 from . import tool_command_adoption
@@ -112,3 +113,7 @@ def workflow_runtime_cli(*, bundle: str) -> dict[str, Any]:
 
 def delegation_lifecycle_cli(*, bundle: str) -> dict[str, Any]:
     return agent_delegation_and_task_lifecycle_runtime.validate_bundle_file(bundle)
+
+
+def extension_runtime_cli(*, bundle: str) -> dict[str, Any]:
+    return skill_and_plugin_extension_runtime.validate_bundle_file(bundle)
