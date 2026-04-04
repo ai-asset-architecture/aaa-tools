@@ -21,6 +21,7 @@ from . import offering_package_definition_resolution
 from . import offering_package_materialization_and_bootstrap_mapping
 from . import offering_package_prerequisite_gate
 from . import offering_package_status_and_evidence_runtime
+from . import offering_package_composition_and_closeout
 from . import package_machine_interface_read_boundary
 from . import offering_package_selection_runtime_baseline
 from . import structured_output_and_result_normalization_plane
@@ -158,6 +159,10 @@ def offering_package_status_and_evidence_runtime_cli(*, bundle: str) -> dict[str
 
 def package_machine_interface_read_boundary_cli(*, bundle: str) -> dict[str, Any]:
     return package_machine_interface_read_boundary.validate_bundle_file(bundle)
+
+
+def offering_package_composition_and_closeout_cli(*, bundle: str) -> dict[str, Any]:
+    return offering_package_composition_and_closeout.validate_bundle_file(bundle)
 
 
 def topology_aware_init_plan_validation_cli(*, bundle: str) -> dict[str, Any]:

@@ -1,0 +1,54 @@
+name: v2.1.29 Offering Package Composition and Closeout
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "aaa/**"
+      - "tests/test_offering_package_composition_and_closeout.py"
+      - ".github/workflows/v2-1-29-offering-package-composition-and-closeout.yml"
+  workflow_dispatch:
+
+jobs:
+  offering-package-composition-and-closeout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout aaa-tools
+        uses: actions/checkout@v4
+
+      - name: Checkout aaa-tpl-docs
+        uses: actions/checkout@v4
+        with:
+          repository: ai-asset-architecture/aaa-tpl-docs
+          path: aaa-tpl-docs
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install aaa-tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -e .
+
+      - name: Run targeted pytest
+        run: python -m pytest tests/test_offering_package_composition_and_closeout.py -q
+
+      - name: Validate canonical pass bundle
+        run: >
+          python -m aaa.cli governance offering-package-composition-and-closeout
+          --bundle aaa-tpl-docs/internal/development/contracts/ops/examples/pass/2026-04-04-v2.1.29-offering-package-composition-and-closeout.pass.json
+          --format json
+
+      - name: Validate canonical fail bundle
+        run: |
+          set +e
+          python -m aaa.cli governance offering-package-composition-and-closeout \
+            --bundle aaa-tpl-docs/internal/development/contracts/ops/examples/fail/2026-04-04-v2.1.29-offering-package-composition-and-closeout.fail.json \
+            --format json
+          status=$?
+          set -e
+          test "$status" -eq 2

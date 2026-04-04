@@ -10,6 +10,7 @@ from . import offering_package_definition_resolution
 from . import offering_package_materialization_and_bootstrap_mapping
 from . import offering_package_prerequisite_gate
 from . import offering_package_status_and_evidence_runtime
+from . import offering_package_composition_and_closeout
 from . import package_machine_interface_read_boundary
 from . import query_orchestration_runtime
 from . import repo_check_runtime_adoption
@@ -43,6 +44,7 @@ __all__ = [
     "offering_package_materialization_and_bootstrap_mapping",
     "offering_package_prerequisite_gate",
     "offering_package_status_and_evidence_runtime",
+    "offering_package_composition_and_closeout",
     "package_machine_interface_read_boundary",
     "permission_and_authorization_runtime_gate",
     "query_orchestration_runtime",
