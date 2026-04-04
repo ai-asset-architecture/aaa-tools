@@ -2,57 +2,53 @@ name: v2.1.25 Offering Package Prerequisite Gate
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - "aaa/offering_package_prerequisite_gate.py"
-      - "aaa/governance_commands.py"
-      - "aaa/cli.py"
-      - "aaa/__init__.py"
+      - "aaa/**"
       - "tests/test_offering_package_prerequisite_gate.py"
       - ".github/workflows/v2-1-25-offering-package-prerequisite-gate.yml"
-      - "../aaa-tpl-docs/internal/development/contracts/ops/offering-package-prerequisite-gate.v0.1.schema.json"
-      - "../aaa-tpl-docs/internal/development/contracts/ops/examples/pass/2026-04-04-v2.1.25-offering-package-prerequisite-gate.pass.json"
-      - "../aaa-tpl-docs/internal/development/contracts/ops/examples/fail/2026-04-04-v2.1.25-offering-package-prerequisite-gate.fail.json"
   workflow_dispatch:
 
 jobs:
-  validate:
+  offering-package-prerequisite-gate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: aaa-tools
     steps:
-      - name: Checkout
+      - name: Checkout aaa-tools
         uses: actions/checkout@v4
+
+      - name: Checkout aaa-tpl-docs
+        uses: actions/checkout@v4
+        with:
+          repository: ai-asset-architecture/aaa-tpl-docs
+          path: aaa-tpl-docs
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
-      - name: Install test dependencies
+      - name: Install aaa-tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pytest
+          pip install pytest
+          pip install -e .
 
       - name: Run targeted pytest
         run: python -m pytest tests/test_offering_package_prerequisite_gate.py -q
 
       - name: Validate canonical pass bundle
-        run: |
-          python -m aaa.cli governance offering-package-prerequisite-gate \
-            --bundle ../aaa-tpl-docs/internal/development/contracts/ops/examples/pass/2026-04-04-v2.1.25-offering-package-prerequisite-gate.pass.json \
-            --format json
+        run: >
+          python -m aaa.cli governance offering-package-prerequisite-gate
+          --bundle aaa-tpl-docs/internal/development/contracts/ops/examples/pass/2026-04-04-v2.1.25-offering-package-prerequisite-gate.pass.json
+          --format json
 
       - name: Validate canonical fail bundle
         run: |
           set +e
           python -m aaa.cli governance offering-package-prerequisite-gate \
-            --bundle ../aaa-tpl-docs/internal/development/contracts/ops/examples/fail/2026-04-04-v2.1.25-offering-package-prerequisite-gate.fail.json \
+            --bundle aaa-tpl-docs/internal/development/contracts/ops/examples/fail/2026-04-04-v2.1.25-offering-package-prerequisite-gate.fail.json \
             --format json
           status=$?
           set -e
-          if [ "$status" -eq 0 ]; then
-            echo "expected fail bundle to return non-zero"
-            exit 1
-          fi
+          test "$status" -eq 2
