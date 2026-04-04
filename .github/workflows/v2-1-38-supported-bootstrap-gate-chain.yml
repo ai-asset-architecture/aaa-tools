@@ -1,0 +1,28 @@
+name: v2.1.38 Supported Bootstrap Gate Chain
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  supported-bootstrap-gate-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Run tests
+        run: pytest tests/test_supported_bootstrap_gate_chain.py -q
+
+      - name: Smoke canonical supported path
+        run: |
+          python -m aaa.cli bootstrap supported-path --level core --topology-mode repo_local --format json

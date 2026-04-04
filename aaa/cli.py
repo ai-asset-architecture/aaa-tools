@@ -17,6 +17,7 @@ from . import audit_commands
 from . import init_commands
 from . import pack_commands
 from . import package_commands
+from . import bootstrap_commands
 from . import governance_commands
 from . import runbook_registry
 from . import runbook_runtime
@@ -168,6 +169,7 @@ if typer:
     ops_typer = typer.Typer(no_args_is_help=True)
     pack_typer = typer.Typer(no_args_is_help=True)
     package_typer = typer.Typer(no_args_is_help=True)
+    bootstrap_typer = typer.Typer(no_args_is_help=True)
     registry_typer = registry_commands.app
     from .cmd import lock_commands
     lock_typer = lock_commands.app
@@ -878,6 +880,20 @@ if typer:
             raise typer.Exit(code=2)
         typer.echo(package_commands.render_payload(payload, output_format))
 
+    @bootstrap_typer.command("supported-path")
+    def bootstrap_supported_path(
+        level: str = typer.Option(..., "--level", help="lite|core|full"),
+        topology_mode: str = typer.Option("repo_local", "--topology-mode", help="dedicated_repo|repo_local|hybrid"),
+        output_format: str = typer.Option("human", "--format", help="human|json|llm"),
+    ):
+        """Show the one canonical public bootstrap path without inventing a second environment-profile path."""
+        try:
+            payload = bootstrap_commands.supported_path(level, topology_mode)
+        except ValueError as exc:
+            typer.echo(str(exc))
+            raise typer.Exit(code=2)
+        typer.echo(bootstrap_commands.render_payload(payload, output_format))
+
     @app.command("audit")
     def audit(
         local: bool = typer.Option(False, "--local", help="Audit current repo"),
@@ -1049,6 +1065,7 @@ if typer:
     app.add_typer(ops_typer, name="ops")
     app.add_typer(pack_typer, name="pack")
     app.add_typer(package_typer, name="package")
+    app.add_typer(bootstrap_typer, name="bootstrap")
     app.add_typer(registry_typer, name="registry")
     app.add_typer(lock_typer, name="lock")
     app.add_typer(observability_typer, name="observe")

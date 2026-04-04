@@ -1,4 +1,5 @@
 from . import audit_commands
+from . import bootstrap_commands
 from . import check_commands
 from . import context_runtime_preflight
 from . import governance_commands
@@ -34,6 +35,7 @@ from . import github_governance_topology_contract_baseline
 __all__ = [
     "audit_commands",
     "agent_delegation_and_task_lifecycle_runtime",
+    "bootstrap_commands",
     "cli",
     "check_commands",
     "context_runtime_preflight",
