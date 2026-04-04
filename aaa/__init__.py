@@ -15,6 +15,7 @@ from . import session_context_snapshot_runtime
 from . import session_persistence_and_transcript_compaction
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
+from . import structured_output_and_result_normalization_plane
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
 
@@ -37,6 +38,7 @@ __all__ = [
     "session_persistence_and_transcript_compaction",
     "session_readiness_state",
     "shared_command_dispatch_runtime",
+    "structured_output_and_result_normalization_plane",
     "tool_command_adoption",
     "tool_progress_and_runtime_event_stream",
 ]

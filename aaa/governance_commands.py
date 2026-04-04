@@ -14,6 +14,7 @@ from . import session_context_snapshot_runtime
 from . import session_persistence_and_transcript_compaction
 from . import session_readiness_state
 from . import shared_command_dispatch_runtime
+from . import structured_output_and_result_normalization_plane
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
 
@@ -97,3 +98,7 @@ def session_persistence_cli(*, bundle: str) -> dict[str, Any]:
 
 def runtime_control_cli(*, bundle: str) -> dict[str, Any]:
     return runtime_budget_retry_and_recovery_control.validate_bundle_file(bundle)
+
+
+def result_normalization_cli(*, bundle: str) -> dict[str, Any]:
+    return structured_output_and_result_normalization_plane.validate_bundle_file(bundle)
