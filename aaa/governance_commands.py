@@ -17,6 +17,7 @@ from . import shared_command_dispatch_runtime
 from . import structured_output_and_result_normalization_plane
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
+from . import workflow_and_runbook_orchestration_runtime
 
 
 def update_index_cli(
@@ -102,3 +103,7 @@ def runtime_control_cli(*, bundle: str) -> dict[str, Any]:
 
 def result_normalization_cli(*, bundle: str) -> dict[str, Any]:
     return structured_output_and_result_normalization_plane.validate_bundle_file(bundle)
+
+
+def workflow_runtime_cli(*, bundle: str) -> dict[str, Any]:
+    return workflow_and_runbook_orchestration_runtime.validate_bundle_file(bundle)

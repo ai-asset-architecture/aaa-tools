@@ -18,6 +18,7 @@ from . import shared_command_dispatch_runtime
 from . import structured_output_and_result_normalization_plane
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
+from . import workflow_and_runbook_orchestration_runtime
 
 __all__ = [
     "audit_commands",
@@ -41,4 +42,5 @@ __all__ = [
     "structured_output_and_result_normalization_plane",
     "tool_command_adoption",
     "tool_progress_and_runtime_event_stream",
+    "workflow_and_runbook_orchestration_runtime",
 ]
