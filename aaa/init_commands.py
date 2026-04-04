@@ -164,6 +164,20 @@ def _has_dot_github(repos: Iterable[dict[str, Any]]) -> bool:
     return False
 
 
+def _topology_mode_for_scope(plan: dict[str, Any], preset_name: str | None = None) -> str:
+    presets = plan.get("presets")
+    if isinstance(presets, dict) and preset_name and isinstance(presets.get(preset_name), dict):
+        preset_topology = str(presets[preset_name].get("github_governance_topology", "")).strip()
+        if preset_topology:
+            return preset_topology
+    target_topology = str(plan.get("target", {}).get("github_governance_topology", "")).strip()
+    return target_topology or "dedicated_repo"
+
+
+def _dedicated_dot_github_required(topology_mode: str) -> bool:
+    return topology_mode == "dedicated_repo"
+
+
 def _write_gate_workflow(repo_root: Path, workflow_ref: str) -> None:
     workflows_dir = repo_root / ".github" / "workflows"
     workflows_dir.mkdir(parents=True, exist_ok=True)
@@ -366,7 +380,8 @@ def _fallback_validate_plan(plan: dict[str, Any]) -> Optional[dict[str, Any]]:
                     "schema_path": "presets/repos",
                     "hint": "add at least one repo",
                 }
-            if not _has_dot_github(repos):
+            topology_mode = _topology_mode_for_scope(plan, preset_name)
+            if _dedicated_dot_github_required(topology_mode) and not _has_dot_github(repos):
                 return {
                     "message": "missing required repo: .github",
                     "json_path": f"presets/{preset_name}/repos",
@@ -459,7 +474,8 @@ def _validate_plan_semantics(plan: dict[str, Any]) -> Optional[dict[str, Any]]:
                 "schema_path": "presets/repos",
                 "hint": "add at least one repo",
             }
-        if not _has_dot_github(repos):
+        topology_mode = _topology_mode_for_scope(plan, preset_name)
+        if _dedicated_dot_github_required(topology_mode) and not _has_dot_github(repos):
             return {
                 "message": "missing required repo: .github",
                 "json_path": f"presets/{preset_name}/repos",
@@ -583,7 +599,8 @@ def _resolve_repos_from_plan(
             {"preset": preset_name},
         )
 
-    if not _has_dot_github(repos):
+    topology_mode = _topology_mode_for_scope(plan, preset_name)
+    if _dedicated_dot_github_required(topology_mode) and not _has_dot_github(repos):
         _emit_error_and_exit(
             jsonl,
             command,

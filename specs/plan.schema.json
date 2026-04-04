@@ -48,7 +48,11 @@
         },
         "visibility": { "type": "string", "enum": ["private", "public"] },
         "default_branch": { "type": "string", "minLength": 1 },
-        "mode": { "type": "string", "enum": ["pr", "direct"] }
+        "mode": { "type": "string", "enum": ["pr", "direct"] },
+        "github_governance_topology": {
+          "type": "string",
+          "enum": ["dedicated_repo", "repo_local", "hybrid"]
+        }
       }
     },
 
@@ -119,6 +123,10 @@
         "additionalProperties": false,
         "properties": {
           "description": { "type": "string" },
+          "github_governance_topology": {
+            "type": "string",
+            "enum": ["dedicated_repo", "repo_local", "hybrid"]
+          },
           "repos": {
             "type": "array",
             "minItems": 1,

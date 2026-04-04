@@ -15,12 +15,14 @@
     "project_slug": "{{PROJECT_SLUG}}",
     "visibility": "private",
     "default_branch": "main",
-    "mode": "pr"
+    "mode": "pr",
+    "github_governance_topology": "dedicated_repo"
   },
   "default_preset": "governance_native",
   "presets": {
     "governance_native": {
       "description": "Governance-Native preset (default)",
+      "github_governance_topology": "dedicated_repo",
       "repos": [
         {
           "name": ".github",
@@ -71,6 +73,7 @@
     },
     "lean": {
       "description": "Lean preset for low-friction adoption",
+      "github_governance_topology": "dedicated_repo",
       "repos": [
         {
           "name": ".github",

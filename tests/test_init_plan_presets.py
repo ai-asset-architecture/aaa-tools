@@ -29,6 +29,55 @@ class InitPlanPresetsTest(unittest.TestCase):
             plan["repos"] = [{"name": "legacy-repo", "required_checks": ["lint", "test", "eval"]}]
         return plan
 
+    def _topology_plan(self, topology, include_dot_github):
+        repos = [{
+            "name": "org-docs",
+            "type": "docs",
+            "template": "aaa-tpl-docs",
+            "description": "Docs repo",
+            "owners": ["@aaa/architect"],
+            "required_checks": ["lint", "test", "eval"],
+        }]
+        if include_dot_github:
+            repos.insert(0, {
+                "name": ".github",
+                "type": "docs",
+                "template": "aaa-tpl-docs",
+                "description": "Governance repo",
+                "owners": ["@aaa/architect"],
+                "required_checks": ["lint", "test", "eval"],
+            })
+        return {
+            "plan_version": "2.0",
+            "aaa": {
+                "org": "ai-asset-architecture",
+                "version_tag": "v2.0.4",
+                "templates": {
+                    "docs": "aaa-tpl-docs",
+                    "service": "aaa-tpl-service",
+                    "frontend": "aaa-tpl-frontend",
+                },
+                "actions_repo": "aaa-actions",
+            },
+            "target": {
+                "project_slug": "demo",
+                "org": "demo",
+                "visibility": "private",
+                "default_branch": "main",
+                "mode": "pr",
+                "github_governance_topology": topology,
+            },
+            "steps": [{"id": "preflight", "type": "check", "description": "preflight", "commands": ["aaa --version"]}],
+            "reporting": {"output_schema_path": "output.schema.json", "required_fields": ["metadata"]},
+            "default_preset": "governance_native",
+            "presets": {
+                "governance_native": {
+                    "github_governance_topology": topology,
+                    "repos": repos,
+                },
+            },
+        }
+
     def test_presets_resolution_warns_on_mixed(self):
         plan = self._preset_plan(include_legacy=True)
         notices = []
@@ -96,6 +145,39 @@ class InitPlanPresetsTest(unittest.TestCase):
                 command="aaa init",
                 step_id="run_plan",
             )
+
+    def test_repo_local_topology_allows_missing_dedicated_dot_github_repo(self):
+        plan = self._topology_plan("repo_local", include_dot_github=False)
+
+        repos = init_commands._resolve_repos_from_plan(
+            plan,
+            preset=None,
+            jsonl=False,
+            command="aaa init",
+            step_id="run_plan",
+        )
+
+        self.assertEqual([repo["name"] for repo in repos], ["org-docs"])
+
+    def test_dedicated_topology_still_requires_dot_github_repo(self):
+        plan = self._topology_plan("dedicated_repo", include_dot_github=False)
+
+        with self.assertRaises(init_commands.typer.Exit):
+            init_commands._resolve_repos_from_plan(
+                plan,
+                preset=None,
+                jsonl=False,
+                command="aaa init",
+                step_id="run_plan",
+            )
+
+    def test_validate_plan_accepts_topology_fields_in_target_and_preset(self):
+        plan = self._topology_plan("repo_local", include_dot_github=False)
+        schema_path = init_commands.REPO_ROOT / "specs" / "plan.schema.json"
+
+        error = init_commands._validate_plan(plan, schema_path)
+
+        self.assertIsNone(error)
 
 
 if __name__ == "__main__":

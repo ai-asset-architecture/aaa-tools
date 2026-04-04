@@ -18,6 +18,7 @@ from . import session_readiness_state
 from . import skill_and_plugin_extension_runtime
 from . import shared_command_dispatch_runtime
 from . import structured_output_and_result_normalization_plane
+from . import topology_aware_init_plan_validation
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
 from . import workflow_and_runbook_orchestration_runtime
@@ -122,3 +123,7 @@ def extension_runtime_cli(*, bundle: str) -> dict[str, Any]:
 
 def composition_root_cli(*, bundle: str) -> dict[str, Any]:
     return runtime_composition_root_and_system_assembly.validate_bundle_file(bundle)
+
+
+def topology_aware_init_plan_validation_cli(*, bundle: str) -> dict[str, Any]:
+    return topology_aware_init_plan_validation.validate_bundle_file(bundle)
