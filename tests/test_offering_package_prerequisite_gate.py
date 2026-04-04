@@ -3,13 +3,23 @@ from pathlib import Path
 from aaa import offering_package_prerequisite_gate
 
 
-PASS_BUNDLE = (
-    Path(__file__).resolve().parents[2]
-    / "aaa-tpl-docs/internal/development/contracts/ops/examples/pass/2026-04-04-v2.1.25-offering-package-prerequisite-gate.pass.json"
+def _resolve_fixture(relative_path: str) -> Path:
+    test_file = Path(__file__).resolve()
+    candidates = [
+        test_file.parents[1] / relative_path,
+        test_file.parents[2] / relative_path,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+PASS_BUNDLE = _resolve_fixture(
+    "aaa-tpl-docs/internal/development/contracts/ops/examples/pass/2026-04-04-v2.1.25-offering-package-prerequisite-gate.pass.json"
 )
-FAIL_BUNDLE = (
-    Path(__file__).resolve().parents[2]
-    / "aaa-tpl-docs/internal/development/contracts/ops/examples/fail/2026-04-04-v2.1.25-offering-package-prerequisite-gate.fail.json"
+FAIL_BUNDLE = _resolve_fixture(
+    "aaa-tpl-docs/internal/development/contracts/ops/examples/fail/2026-04-04-v2.1.25-offering-package-prerequisite-gate.fail.json"
 )
 
 
