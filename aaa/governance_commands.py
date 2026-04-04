@@ -4,8 +4,10 @@ from typing import Any
 from . import context_runtime_preflight
 from . import governance_index
 from . import multi_repo_worktree_identity
+from . import repo_check_runtime_adoption
 from . import runtime_adoption_readiness_inspect
 from . import session_readiness_state
+from . import shared_command_dispatch_runtime
 from . import tool_command_adoption
 
 
@@ -52,3 +54,11 @@ def validate_session_readiness_state_cli(*, bundle: str) -> dict[str, Any]:
 
 def readiness_inspect_cli(*, bundle: str) -> dict[str, Any]:
     return runtime_adoption_readiness_inspect.validate_bundle_file(bundle)
+
+
+def repo_check_cli(*, bundle: str) -> dict[str, Any]:
+    return repo_check_runtime_adoption.validate_bundle_file(bundle)
+
+
+def shared_command_dispatch_cli(*, dispatch_bundle: str, command_bundle: str) -> dict[str, Any]:
+    return shared_command_dispatch_runtime.dispatch_bundle_file(dispatch_bundle, command_bundle)

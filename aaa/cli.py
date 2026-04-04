@@ -297,6 +297,42 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("repo-check")
+    def governance_repo_check(
+        bundle: Path = typer.Option(..., "--bundle", help="Path to repo-check adoption bundle JSON"),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate repo-check runtime adoption bundle across shared governance law."""
+        payload = governance_commands.repo_check_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
+    @governance_typer.command("shared-command-dispatch")
+    def governance_shared_command_dispatch(
+        dispatch_bundle: Path = typer.Option(..., "--dispatch-bundle", help="Path to shared dispatch bundle JSON"),
+        command_bundle: Path = typer.Option(..., "--command-bundle", help="Path to command bundle JSON"),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Route readiness-inspect or repo-check through a shared command dispatch runtime."""
+        payload = governance_commands.shared_command_dispatch_cli(
+            dispatch_bundle=str(dispatch_bundle),
+            command_bundle=str(command_bundle),
+        )
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @ops_typer.command("render-dashboard")
     def ops_render_dashboard(
         input_path: Path = typer.Option(..., "--input", help="Input JSON file"),

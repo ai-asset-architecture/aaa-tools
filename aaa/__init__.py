@@ -4,9 +4,11 @@ from . import context_runtime_preflight
 from . import governance_commands
 from . import governance_index
 from . import multi_repo_worktree_identity
+from . import repo_check_runtime_adoption
 from . import runtime_adoption_readiness_inspect
 from . import runbook_runtime
 from . import session_readiness_state
+from . import shared_command_dispatch_runtime
 from . import tool_command_adoption
 
 __all__ = [
@@ -17,8 +19,10 @@ __all__ = [
     "governance_commands",
     "governance_index",
     "multi_repo_worktree_identity",
+    "repo_check_runtime_adoption",
     "runtime_adoption_readiness_inspect",
     "runbook_runtime",
     "session_readiness_state",
+    "shared_command_dispatch_runtime",
     "tool_command_adoption",
 ]
