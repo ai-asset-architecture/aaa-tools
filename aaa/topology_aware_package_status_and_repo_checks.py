@@ -111,6 +111,19 @@ def validate_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
+    structure_acceptance_status = "structure_accepted"
+    if topology_mode_detected == "unknown":
+        structure_acceptance_status = "structure_not_detected"
+    elif topology_mode_expected != topology_mode_detected:
+        structure_acceptance_status = "structure_mismatch"
+
+    if topology_compliance_status == "compliant" and topology_mode_resolved in {"dedicated_repo", "repo_local", "hybrid"}:
+        topology_completion_status = "topology_compliant"
+    elif topology_compliance_status == "non_compliant":
+        topology_completion_status = "topology_non_compliant"
+    else:
+        topology_completion_status = "topology_evidence_incomplete"
+
     valid = not errors
     return {
         "status": "ok" if valid else "error",
@@ -123,6 +136,9 @@ def validate_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
             "topology_mode_detected": topology_mode_detected,
             "topology_mode_resolved": topology_mode_resolved,
             "topology_compliance_status": topology_compliance_status,
+            "structure_acceptance_status": structure_acceptance_status,
+            "topology_completion_status": topology_completion_status,
+            "downstream_topology_adjudication_point": "topology_aware_package_status_and_repo_checks",
             "missing_governance_assets": missing_governance_assets,
             "misplaced_governance_assets": misplaced_governance_assets,
         },

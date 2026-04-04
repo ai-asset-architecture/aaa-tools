@@ -178,6 +178,23 @@ def _dedicated_dot_github_required(topology_mode: str) -> bool:
     return topology_mode == "dedicated_repo"
 
 
+def _topology_boundary_signal(plan: dict[str, Any], preset_name: str | None = None) -> dict[str, Any]:
+    topology_mode = _topology_mode_for_scope(plan, preset_name)
+    return {
+        "topology_mode": topology_mode,
+        "init_boundary_mode": "declared_planned_structure_compatibility",
+        "runtime_detected_topology_verdict_emitted": False,
+        "structure_pass_is_topology_completion_pass": False,
+        "downstream_topology_adjudication_ref": "v2.1.35",
+    }
+
+
+def _resolve_report_path(log_dir: Optional[Path], workspace_dir: Path) -> Path:
+    report_path = log_dir / "aaa-init-report.json" if log_dir else workspace_dir / "aaa-init-report.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    return report_path
+
+
 def _write_gate_workflow(repo_root: Path, workflow_ref: str) -> None:
     workflows_dir = repo_root / ".github" / "workflows"
     workflows_dir.mkdir(parents=True, exist_ok=True)
@@ -668,12 +685,21 @@ class _Cwd:
 
 
 class _ReportBuilder:
-    def __init__(self, plan: dict[str, Any], plan_path: Path, mode: str, workspace_dir: Path, dry_run: bool):
+    def __init__(
+        self,
+        plan: dict[str, Any],
+        plan_path: Path,
+        mode: str,
+        workspace_dir: Path,
+        dry_run: bool,
+        preset_name: str | None = None,
+    ):
         self.plan = plan
         self.plan_path = plan_path
         self.mode = mode
         self.workspace_dir = workspace_dir
         self.dry_run = dry_run
+        self.preset_name = preset_name
         self.steps: list[dict[str, Any]] = []
         self.repos: list[dict[str, Any]] = []
         self._init_repos()
@@ -787,6 +813,7 @@ class _ReportBuilder:
                 "repos_ok": len(self.repos) if status == "pass" and not self.dry_run else 0,
                 "prs_created": prs_created,
                 "next_actions": next_actions,
+                "topology_boundary_signal": _topology_boundary_signal(self.plan, self.preset_name),
             },
         }
         return report
@@ -850,7 +877,11 @@ def validate_plan(
         status="ok",
         command=command,
         step_id=step_id,
-        data={"plan": str(plan), "schema": str(schema)},
+        data={
+            "plan": str(plan),
+            "schema": str(schema),
+            **_topology_boundary_signal(plan_data),
+        },
     )
 
 
@@ -922,7 +953,7 @@ def run_plan(
             {"path": str(workspace_dir)},
         )
 
-    report_builder = _ReportBuilder(plan_data, plan, mode, workspace_dir, dry_run=dry_run)
+    report_builder = _ReportBuilder(plan_data, plan, mode, workspace_dir, dry_run=dry_run, preset_name=preset)
     prs_created = 0
     next_actions: list[str] = []
 
@@ -1090,7 +1121,7 @@ def run_plan(
                 )
     except SystemExit:
         report = report_builder.build("fail", prs_created, next_actions)
-        report_path = log_dir / "aaa-init-report.json" if log_dir else workspace_dir / "aaa-init-report.json"
+        report_path = _resolve_report_path(log_dir, workspace_dir)
         report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
         emit_jsonl(
             jsonl,
@@ -1103,7 +1134,7 @@ def run_plan(
         raise
 
     report = report_builder.build("pass", prs_created, next_actions)
-    report_path = log_dir / "aaa-init-report.json" if log_dir else workspace_dir / "aaa-init-report.json"
+    report_path = _resolve_report_path(log_dir, workspace_dir)
     report_path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
     emit_jsonl(
         jsonl,

@@ -23,6 +23,8 @@ def test_validate_bundle_passes_for_repo_local_compliance():
 
     assert result["valid"] is True
     assert result["derived_results"]["topology_mode_resolved"] == "repo_local"
+    assert result["derived_results"]["structure_acceptance_status"] == "structure_accepted"
+    assert result["derived_results"]["topology_completion_status"] == "topology_compliant"
 
 
 def test_repo_local_may_not_report_missing_dot_github_repo():
@@ -43,6 +45,19 @@ def test_resolved_mode_may_not_conflict_with_compliant_status():
 
     assert result["valid"] is False
     assert "topology_mode_resolved" in result["error_codes"]
+
+
+def test_compliant_with_gap_maps_to_topology_evidence_incomplete():
+    bundle = dict(PASS_BUNDLE)
+    bundle["topology_mode_expected"] = "hybrid"
+    bundle["topology_mode_detected"] = "hybrid"
+    bundle["topology_mode_resolved"] = "degraded"
+    bundle["topology_compliance_status"] = "compliant_with_gap"
+
+    result = runtime.validate_bundle(bundle)
+
+    assert result["valid"] is True
+    assert result["derived_results"]["topology_completion_status"] == "topology_evidence_incomplete"
 
 
 def _resolve_tpl_docs_example(example_name: str, variant: str) -> Path:
