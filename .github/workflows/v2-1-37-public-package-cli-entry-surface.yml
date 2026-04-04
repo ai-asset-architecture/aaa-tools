@@ -1,0 +1,54 @@
+name: v2.1.37 Public Package CLI Entry Surface
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "aaa/**"
+      - "tests/test_public_package_cli_entry_surface.py"
+      - ".github/workflows/v2-1-37-public-package-cli-entry-surface.yml"
+
+jobs:
+  public-package-cli-entry-surface:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout aaa-tools
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install aaa-tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest typer
+          pip install -e .
+
+      - name: Run unit tests
+        run: python -m pytest tests/test_public_package_cli_entry_surface.py -q
+
+      - name: Validate public package select surface
+        run: python -m aaa.cli package select --level core --format json
+
+      - name: Validate public package resolve surface
+        run: python -m aaa.cli package resolve --level core --topology-mode repo_local --format json
+
+      - name: Validate public package status surface
+        run: |
+          mkdir -p sandbox/aaa-tools/.github/workflows sandbox/aaa-tpl-docs/.github/workflows
+          python -m aaa.cli package status --level core --topology-mode repo_local --workspace sandbox --format json
+
+      - name: Validate public package select rejects aliases
+        run: |
+          set +e
+          python -m aaa.cli package select --level lite-bootstrap --format json
+          exit_code=$?
+          set -e
+          if [ "$exit_code" -ne 2 ]; then
+            echo "Expected exit code 2 for package alias rejection, got $exit_code"
+            exit 1
+          fi
