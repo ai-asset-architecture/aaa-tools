@@ -525,6 +525,26 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("offering-package-selection-runtime-baseline")
+    def governance_offering_package_selection_runtime_baseline(
+        bundle: Path = typer.Option(
+            ...,
+            "--bundle",
+            help="Path to offering package selection runtime baseline bundle JSON",
+        ),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate package selection enum/artifact bundle without leaking into resolution or gate semantics."""
+        payload = governance_commands.offering_package_selection_runtime_baseline_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @governance_typer.command("topology-aware-init-plan-validation")
     def governance_topology_aware_init_plan_validation(
         bundle: Path = typer.Option(..., "--bundle", help="Path to topology-aware init plan validation bundle JSON"),
