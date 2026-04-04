@@ -7,6 +7,7 @@ from . import multi_repo_worktree_identity
 from . import permission_and_authorization_runtime_gate
 from . import offering_package_selection_runtime_baseline
 from . import offering_package_definition_resolution
+from . import offering_package_materialization_and_bootstrap_mapping
 from . import offering_package_prerequisite_gate
 from . import query_orchestration_runtime
 from . import repo_check_runtime_adoption
@@ -37,6 +38,7 @@ __all__ = [
     "multi_repo_worktree_identity",
     "offering_package_selection_runtime_baseline",
     "offering_package_definition_resolution",
+    "offering_package_materialization_and_bootstrap_mapping",
     "offering_package_prerequisite_gate",
     "permission_and_authorization_runtime_gate",
     "query_orchestration_runtime",

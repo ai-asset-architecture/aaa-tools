@@ -585,6 +585,26 @@ if typer:
         if not payload["valid"]:
             raise typer.Exit(code=2)
 
+    @governance_typer.command("offering-package-materialization-and-bootstrap-mapping")
+    def governance_offering_package_materialization_and_bootstrap_mapping(
+        bundle: Path = typer.Option(
+            ...,
+            "--bundle",
+            help="Path to offering package materialization and bootstrap mapping bundle JSON",
+        ),
+        output_format: str = typer.Option("human", "--format", help="human|json"),
+    ):
+        """Validate pre-topology offering package materialization/bootstrap mapping bundle."""
+        payload = governance_commands.offering_package_materialization_and_bootstrap_mapping_cli(bundle=str(bundle))
+        if output_format == "json":
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=True))
+        else:
+            typer.echo(f"status={payload['status']} valid={payload['valid']}")
+            for error in payload["errors"]:
+                typer.echo(f"{error['code']}: {error['message']}")
+        if not payload["valid"]:
+            raise typer.Exit(code=2)
+
     @governance_typer.command("topology-aware-init-plan-validation")
     def governance_topology_aware_init_plan_validation(
         bundle: Path = typer.Option(..., "--bundle", help="Path to topology-aware init plan validation bundle JSON"),

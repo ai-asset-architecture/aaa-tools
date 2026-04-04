@@ -18,6 +18,7 @@ from . import session_readiness_state
 from . import skill_and_plugin_extension_runtime
 from . import shared_command_dispatch_runtime
 from . import offering_package_definition_resolution
+from . import offering_package_materialization_and_bootstrap_mapping
 from . import offering_package_prerequisite_gate
 from . import offering_package_selection_runtime_baseline
 from . import structured_output_and_result_normalization_plane
@@ -143,6 +144,10 @@ def offering_package_definition_resolution_cli(*, bundle: str) -> dict[str, Any]
 
 def offering_package_prerequisite_gate_cli(*, bundle: str) -> dict[str, Any]:
     return offering_package_prerequisite_gate.validate_bundle_file(bundle)
+
+
+def offering_package_materialization_and_bootstrap_mapping_cli(*, bundle: str) -> dict[str, Any]:
+    return offering_package_materialization_and_bootstrap_mapping.validate_bundle_file(bundle)
 
 
 def topology_aware_init_plan_validation_cli(*, bundle: str) -> dict[str, Any]:
