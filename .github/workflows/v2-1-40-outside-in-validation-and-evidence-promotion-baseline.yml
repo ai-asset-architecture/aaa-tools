@@ -1,0 +1,69 @@
+name: v2.1.40 Outside-In Validation and Evidence Promotion Baseline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  outside-in-validation-and-evidence-promotion-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: |
+          pip install -e .
+          pip install pytest
+
+      - name: Run tests
+        run: pytest tests/test_outside_in_validation_and_evidence_promotion_baseline.py -q
+
+      - name: Smoke outside-in validation
+        run: |
+          mkdir -p /tmp/aaa-v2140/workspace/aaa-tpl-service/.github
+          mkdir -p /tmp/aaa-v2140/workspace/logs
+          mkdir -p /tmp/aaa-v2140/workspace/.aaa
+          printf '{"summary":{"status":"pass"}}\n' > /tmp/aaa-v2140/workspace/aaa-init-report.json
+          printf '{"profile_name":"local_sandbox"}\n' > /tmp/aaa-v2140/workspace/.aaa/local_sandbox_bootstrap_candidate_evidence.json
+          printf 'ok\n' > /tmp/aaa-v2140/workspace/package-select.txt
+          cat <<'EOF' > /tmp/aaa-v2140/outside-in-note.md
+          # AAA Outside-In Validation Note
+
+          - date: 2026-04-05
+          - mode: remote client outside-in validation
+          - workspace_root: `/tmp/aaa-v2140/workspace`
+          - disposable_boundary: `/tmp only; not canonical evidence storage`
+
+          ## Step-by-step log
+
+          1. Read docs.
+          2. Ran package status.
+
+          ## Observed outputs
+
+          - package CLI works
+
+          ## Topology assumption summary
+
+          - repo_local expected and detected
+
+          ## Blockers
+
+          1. none
+
+          ## What evidence should be preserved outside /tmp
+
+          - package-select.txt
+
+          ## Suggested follow-up tests
+
+          1. rerun with hybrid
+          EOF
+          python -m aaa.cli bootstrap outside-in-validate --note /tmp/aaa-v2140/outside-in-note.md --workspace /tmp/aaa-v2140/workspace --level core --topology-mode repo_local --format json

@@ -18,6 +18,7 @@ from . import init_commands
 from . import pack_commands
 from . import package_commands
 from . import bootstrap_commands
+from . import outside_in_validation_and_evidence_promotion_baseline
 from . import governance_commands
 from . import runbook_registry
 from . import runbook_runtime
@@ -909,6 +910,27 @@ if typer:
             typer.echo(str(exc))
             raise typer.Exit(code=2)
         typer.echo(bootstrap_commands.render_payload(payload, output_format))
+
+    @bootstrap_typer.command("outside-in-validate")
+    def bootstrap_outside_in_validate(
+        note: Path = typer.Option(..., "--note", help="Path to outside-in validation note"),
+        workspace: Path = typer.Option(..., "--workspace", help="Disposable /tmp workspace root"),
+        level: str = typer.Option(..., "--level", help="lite|core|full"),
+        topology_mode: str = typer.Option("repo_local", "--topology-mode", help="dedicated_repo|repo_local|hybrid"),
+        output_format: str = typer.Option("human", "--format", help="human|json|llm"),
+    ):
+        """Build an outside-in validation bundle plus promotion candidate manifest without treating /tmp as canonical evidence."""
+        try:
+            payload = outside_in_validation_and_evidence_promotion_baseline.run_validation(
+                note_path=note,
+                workspace=workspace,
+                level=level,
+                topology_mode=topology_mode,
+            )
+        except (ValueError, FileNotFoundError) as exc:
+            typer.echo(str(exc))
+            raise typer.Exit(code=2)
+        typer.echo(outside_in_validation_and_evidence_promotion_baseline.render_payload(payload, output_format))
 
     @app.command("audit")
     def audit(
