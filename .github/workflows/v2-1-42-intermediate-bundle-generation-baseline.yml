@@ -21,7 +21,7 @@ jobs:
 
       - name: Run v2.1.42 tests
         run: |
-          pytest tests/test_intermediate_bundle_generation_baseline.py \
+          python -m pytest tests/test_intermediate_bundle_generation_baseline.py \
             -v --tb=short \
             --junit-xml=test-results/v2-1-42-results.xml
 
