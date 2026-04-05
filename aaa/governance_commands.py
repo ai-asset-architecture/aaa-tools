@@ -35,6 +35,7 @@ from . import github_governance_topology_composition_and_closeout
 from . import tool_command_adoption
 from . import tool_progress_and_runtime_event_stream
 from . import workflow_and_runbook_orchestration_runtime
+from . import intermediate_bundle_generation_baseline
 
 
 def update_index_cli(
@@ -192,3 +193,32 @@ def github_governance_topology_contract_baseline_cli(*, bundle: str) -> dict[str
 
 def github_governance_topology_composition_and_closeout_cli(*, bundle: str) -> dict[str, Any]:
     return github_governance_topology_composition_and_closeout.validate_bundle_file(bundle)
+
+
+def intermediate_bundle_generate_cli(
+    *,
+    topology: str | None = None,
+    profile: str | None = None,
+    artifact: str | None = None,
+) -> dict[str, Any]:
+    """Generate command-emitted intermediate bundles (v2.1.42)."""
+    if artifact == "prerequisite_bundle" and topology:
+        return intermediate_bundle_generation_baseline.generate_prerequisite_bundle(
+            topology=topology, profile=profile or "default"
+        )
+    if artifact == "materialization_mapping_bundle" and topology:
+        return intermediate_bundle_generation_baseline.generate_materialization_mapping_bundle(
+            topology=topology, profile=profile or "default"
+        )
+    # Default: full generation report
+    return intermediate_bundle_generation_baseline.build_generation_report(
+        topology=topology, profile=profile
+    )
+
+
+def intermediate_bundle_validate_cli(*, bundle: str) -> dict[str, Any]:
+    """Validate an intermediate bundle against the v2.1.42 schema contract."""
+    import json
+    from pathlib import Path
+    data = json.loads(Path(bundle).read_text(encoding="utf-8"))
+    return intermediate_bundle_generation_baseline.validate_bundle(data)

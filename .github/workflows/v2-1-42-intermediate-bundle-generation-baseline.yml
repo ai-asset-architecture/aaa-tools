@@ -1,0 +1,92 @@
+name: v2.1.42 Intermediate Bundle Generation Baseline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-intermediate-bundle-generation-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run v2.1.42 tests
+        run: |
+          pytest tests/test_intermediate_bundle_generation_baseline.py \
+            -v --tb=short \
+            --junit-xml=test-results/v2-1-42-results.xml
+
+      - name: Smoke - generate prerequisite_bundle (dedicated_repo)
+        run: |
+          python - <<'EOF'
+          from aaa.intermediate_bundle_generation_baseline import (
+              build_generation_report,
+              generate_prerequisite_bundle,
+              generate_materialization_mapping_bundle,
+              validate_bundle,
+          )
+          import json
+
+          # Full report
+          report = build_generation_report()
+          assert report["supported_path_fully_automated"] is False
+          assert report["full_orchestration_provided"] is False
+          assert report["full_execution_readiness_certified"] is False
+          print("PASS: build_generation_report()")
+
+          # Per-topology prerequisite bundles
+          for topo in ["dedicated_repo", "repo_local", "hybrid"]:
+              b = generate_prerequisite_bundle(topo)
+              assert b["artifact_origin"] == "command_emitted"
+              assert b["generation_status"] == "automated_in_v2_1_42"
+              print(f"PASS: generate_prerequisite_bundle({topo})")
+
+          # Per-topology materialization bundles
+          for topo in ["dedicated_repo", "repo_local", "hybrid"]:
+              b = generate_materialization_mapping_bundle(topo)
+              assert b["payload"]["back_write_allowed"] is False
+              print(f"PASS: generate_materialization_mapping_bundle({topo})")
+
+          # Validate a known-pass payload
+          pass_payload = {
+              "version": "v0.1",
+              "runtime_plane_mode": "intermediate_bundle_generation_baseline",
+              "line_class": "canonical_path_generation_line",
+              "supported_path_fully_automated": False,
+              "full_orchestration_provided": False,
+              "full_execution_readiness_certified": False,
+              "artifacts": [
+                  {
+                      "artifact_id": "prerequisite_bundle",
+                      "artifact_role": "prerequisite_gate_input",
+                      "artifact_origin": "command_emitted",
+                      "artifact_required_for_step": True,
+                      "artifact_not_auto_generated_in_v2_1_42": False,
+                      "generation_status": "automated_in_v2_1_42",
+                      "topology_constraints": ["dedicated_repo"],
+                      "profile_constraints": ["default"],
+                  }
+              ],
+          }
+          result = validate_bundle(pass_payload)
+          assert result["verdict"] == "pass", result["errors"]
+          print("PASS: validate_bundle(pass_payload)")
+
+          print("ALL SMOKE CHECKS PASSED")
+          EOF
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-1-42-test-results
+          path: test-results/
