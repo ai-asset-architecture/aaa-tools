@@ -898,7 +898,14 @@ class _ReportBuilder:
         return report
 
 
-@init_app.command("validate-plan")
+@init_app.command(
+    "validate-plan",
+    help=(
+        "Validate plan boundary/schema legitimacy only. Minimal example: "
+        '{"plan_version":"2.0","target":{"github_governance_topology":"repo_local"}} '
+        "This does not certify downstream bundle readiness, full automation, or full execution readiness."
+    ),
+)
 def validate_plan(
     plan: Path = typer.Option(..., "--plan", exists=False, readable=False),
     schema: Path = typer.Option(REPO_ROOT / "specs" / "plan.schema.json", "--schema"),
@@ -959,6 +966,10 @@ def validate_plan(
         data={
             "plan": str(plan),
             "schema": str(schema),
+            "truth_boundary": "plan_boundary_only",
+            "downstream_bundle_readiness_certified": False,
+            "supported_path_fully_automated": False,
+            "full_execution_readiness_certified": False,
             **_topology_boundary_signal(plan_data),
         },
     )

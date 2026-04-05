@@ -839,7 +839,14 @@ if typer:
         payload = pack_commands.list_packs(Path.cwd())
         typer.echo(json.dumps(payload, ensure_ascii=True))
 
-    @package_typer.command("select")
+    @package_typer.command(
+        "select",
+        help=(
+            "Select a public package level for the canonical support path. "
+            "This emits a selection artifact only; it does not resolve topology, "
+            "does not activate runtime, and does not certify readiness."
+        ),
+    )
     def package_select(
         level: str = typer.Option(..., "--level", help="lite|core|full"),
         output_format: str = typer.Option("human", "--format", help="human|json|llm"),
@@ -852,7 +859,14 @@ if typer:
             raise typer.Exit(code=2)
         typer.echo(package_commands.render_payload(payload, output_format))
 
-    @package_typer.command("resolve")
+    @package_typer.command(
+        "resolve",
+        help=(
+            "Resolve a public package definition through topology-aware truth. "
+            "This emits resolved-definition output, but does not auto-generate downstream bundles "
+            "and does not provide full orchestration."
+        ),
+    )
     def package_resolve(
         level: str = typer.Option(..., "--level", help="lite|core|full"),
         topology_mode: str = typer.Option("repo_local", "--topology-mode", help="dedicated_repo|repo_local|hybrid"),
@@ -866,7 +880,14 @@ if typer:
             raise typer.Exit(code=2)
         typer.echo(package_commands.render_payload(payload, output_format))
 
-    @package_typer.command("status")
+    @package_typer.command(
+        "status",
+        help=(
+            "Discover truthful onboarding/support status. "
+            "Checks topology detection, minimum repo set, and misplaced governance assets. "
+            "This is not full readiness certification."
+        ),
+    )
     def package_status(
         level: str = typer.Option(..., "--level", help="lite|core|full"),
         topology_mode: str = typer.Option("repo_local", "--topology-mode", help="dedicated_repo|repo_local|hybrid"),
@@ -881,7 +902,13 @@ if typer:
             raise typer.Exit(code=2)
         typer.echo(package_commands.render_payload(payload, output_format))
 
-    @bootstrap_typer.command("supported-path")
+    @bootstrap_typer.command(
+        "supported-path",
+        help=(
+            "Show the one canonical public bootstrap path and its artifact handoff. "
+            "Client-authored artifacts remain required in v2.1.41, so the supported path is not fully automated."
+        ),
+    )
     def bootstrap_supported_path(
         level: str = typer.Option(..., "--level", help="lite|core|full"),
         topology_mode: str = typer.Option("repo_local", "--topology-mode", help="dedicated_repo|repo_local|hybrid"),
@@ -895,7 +922,13 @@ if typer:
             raise typer.Exit(code=2)
         typer.echo(bootstrap_commands.render_payload(payload, output_format))
 
-    @bootstrap_typer.command("profile")
+    @bootstrap_typer.command(
+        "profile",
+        help=(
+            "Show the supported bootstrap environment profile. "
+            "Profiles do not create a second public path and do not imply full readiness."
+        ),
+    )
     def bootstrap_profile(
         profile: str = typer.Option(..., "--profile", help="local_sandbox"),
         level: str = typer.Option(..., "--level", help="lite|core|full"),

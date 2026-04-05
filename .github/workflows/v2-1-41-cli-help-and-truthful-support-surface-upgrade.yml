@@ -1,0 +1,32 @@
+name: v2.1.41 CLI Help and Truthful Support Surface Upgrade
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  cli-help-and-truthful-support-surface-upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install package
+        run: |
+          pip install -e .
+          pip install pytest
+
+      - name: Run CLI truth-surface tests
+        run: |
+          pytest tests/test_supported_bootstrap_gate_chain.py tests/test_public_package_cli_entry_surface.py -q
+
+      - name: Smoke CLI help boundaries
+        run: |
+          python -m aaa.cli package status --help
+          python -m aaa.cli init validate-plan --help

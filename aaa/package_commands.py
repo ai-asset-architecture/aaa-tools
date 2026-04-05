@@ -55,6 +55,57 @@ PACKAGE_BASELINES: dict[str, dict[str, Any]] = {
 }
 
 
+def _top_level_repo_names(workspace: str | Path) -> list[str]:
+    root = Path(workspace)
+    return sorted(item.name for item in root.iterdir() if item.is_dir())
+
+
+def _inventory_signals(level: str, topology_mode: str, workspace: str | Path, detected: dict[str, Any]) -> dict[str, Any]:
+    root = Path(workspace)
+    package_baseline = PACKAGE_BASELINES[level]
+    required_minimum_repo_set = package_baseline["minimum_repo_set_by_topology"][topology_mode]
+    present_repo_set = _top_level_repo_names(root)
+    present_repo_lookup = set(present_repo_set)
+    missing_required_repos = [repo for repo in required_minimum_repo_set if repo not in present_repo_lookup]
+
+    missing_governance_assets: list[str] = []
+    misplaced_governance_assets: list[str] = []
+    unexpected_governance_repos: list[str] = []
+
+    dedicated_present = detected["dedicated_repo_present"]
+    repo_local_paths = detected["repo_local_github_paths"]
+
+    if topology_mode == "dedicated_repo":
+        if not dedicated_present:
+            missing_governance_assets.append(".github root repo missing for dedicated_repo")
+        if repo_local_paths:
+            misplaced_governance_assets.extend(
+                f"{path} present but dedicated_repo requires org_repo_only governance placement" for path in repo_local_paths
+            )
+    elif topology_mode == "repo_local":
+        if dedicated_present:
+            misplaced_governance_assets.append(
+                ".github root present but repo_local requires repo-local governance placement only"
+            )
+            unexpected_governance_repos.append(".github")
+        if not repo_local_paths:
+            missing_governance_assets.append("repo-local .github/workflows signal missing for repo_local")
+    elif topology_mode == "hybrid":
+        if not dedicated_present:
+            missing_governance_assets.append(".github root repo missing for hybrid")
+        if not repo_local_paths:
+            missing_governance_assets.append("repo-local .github/workflows signal missing for hybrid")
+
+    return {
+        "required_minimum_repo_set": required_minimum_repo_set,
+        "present_repo_set": present_repo_set,
+        "missing_required_repos": missing_required_repos,
+        "unexpected_governance_repos": unexpected_governance_repos,
+        "missing_governance_assets": missing_governance_assets,
+        "misplaced_governance_assets": misplaced_governance_assets,
+    }
+
+
 def _assert_package_level(level: str) -> str:
     package_level = str(level).strip()
     if package_level not in PACKAGE_LEVELS:
@@ -143,16 +194,31 @@ def build_status_payload(level: str, topology_mode: str, workspace: str | Path) 
     expected_topology = _assert_topology_mode(topology_mode)
     detected = detect_topology_mode(workspace)
     detected_mode = detected["detected_topology_mode"]
+    inventory = _inventory_signals(package_level, expected_topology, workspace, detected)
 
     if detected_mode == "unknown":
         resolved_mode = "not_evaluable"
-        compliance_status = "compliant_with_gap"
-    elif detected_mode == expected_topology:
-        resolved_mode = detected_mode
-        compliance_status = "compliant"
-    else:
+        topology_compliance_status = "compliant_with_gap"
+    elif detected_mode != expected_topology:
         resolved_mode = "degraded"
-        compliance_status = "compliant_with_gap"
+        topology_compliance_status = "non_compliant"
+    elif inventory["misplaced_governance_assets"]:
+        resolved_mode = "degraded"
+        topology_compliance_status = "non_compliant"
+    elif inventory["missing_required_repos"] or inventory["missing_governance_assets"]:
+        resolved_mode = expected_topology
+        topology_compliance_status = "compliant_with_gap"
+    else:
+        resolved_mode = expected_topology
+        topology_compliance_status = "compliant"
+
+    package_compliance_status = "compliant"
+    if inventory["missing_required_repos"]:
+        package_compliance_status = "compliant_with_gap"
+    if inventory["misplaced_governance_assets"] or detected_mode not in {expected_topology, "unknown"}:
+        package_compliance_status = "non_compliant"
+    elif detected_mode == "unknown":
+        package_compliance_status = "compliant_with_gap"
 
     pre_topology_status_payload = {
         "version": "v0.1",
@@ -163,13 +229,24 @@ def build_status_payload(level: str, topology_mode: str, workspace: str | Path) 
         "topology_status_precedence_ref": "v2.1.35",
         "package_level": package_level,
         "package_stage": "resolved",
-        "package_compliance_status": "compliant_with_gap",
+        "package_compliance_status": package_compliance_status,
         "package_runtime_activity": "inactive",
         "evidence_refs": [],
         "runtime_activity_requires_minimum_evidence_refs": True,
         "prerequisite_verdict_used_as_activation": False,
         "narrative_only_status_allowed": False,
         "prose_fallback_allowed": False,
+        "required_minimum_repo_set": inventory["required_minimum_repo_set"],
+        "present_repo_set": inventory["present_repo_set"],
+        "missing_required_repos": inventory["missing_required_repos"],
+        "unexpected_governance_repos": inventory["unexpected_governance_repos"],
+        "status_limitations": [
+            "package_status is a truthful onboarding/support surface",
+            "package_status is not full readiness certification",
+        ],
+        "readiness_scope": "onboarding_support_surface",
+        "full_execution_readiness_certified": False,
+        "truth_boundary": "support_truth_not_full_readiness",
     }
 
     topology_payload = {
@@ -179,11 +256,18 @@ def build_status_payload(level: str, topology_mode: str, workspace: str | Path) 
         "topology_mode_expected": expected_topology,
         "topology_mode_detected": detected_mode,
         "topology_mode_resolved": resolved_mode,
-        "topology_compliance_status": compliance_status,
-        "missing_governance_assets": [],
-        "misplaced_governance_assets": [],
+        "topology_compliance_status": topology_compliance_status,
+        "missing_governance_assets": inventory["missing_governance_assets"],
+        "misplaced_governance_assets": inventory["misplaced_governance_assets"],
         "narrative_only_compliance_allowed": False,
         "prose_fallback_allowed": False,
+        "status_limitations": [
+            "topology status expresses support truth only",
+            "topology status does not certify full execution readiness",
+        ],
+        "readiness_scope": "onboarding_support_surface",
+        "full_execution_readiness_certified": False,
+        "truth_boundary": "support_truth_not_full_readiness",
     }
 
     return {
@@ -272,4 +356,7 @@ def render_payload(payload: dict[str, Any], output_format: str) -> str:
         lines.append(f"topology_resolved={payload['topology_status']['topology_mode_resolved']}")
         lines.append(f"structure_acceptance_status={payload['topology_status']['structure_acceptance_status']}")
         lines.append(f"topology_completion_status={payload['topology_status']['topology_completion_status']}")
+        lines.append(
+            f"full_execution_readiness_certified={str(payload['package_status']['full_execution_readiness_certified']).lower()}"
+        )
     return "\n".join(lines)
