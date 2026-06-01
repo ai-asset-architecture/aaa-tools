@@ -4,6 +4,10 @@
 
 AAA is an open-source governance toolkit for turning AI-assisted work into reusable, versioned, testable, and auditable engineering assets. Instead of treating AI output as one-off chat results, AAA turns work into durable project assets such as CLI workflows, schemas, runbooks, eval checks, templates, and approval/evidence boundaries.
 
+## Why This Repo Qualifies for Codex for OSS
+
+`aaa-tools` is the main executable repository of AAA, maintained as public open-source infrastructure for AI-assisted software governance. It provides real maintainer workflows, not just ideas: bootstrap automation, schema validation, repo checks, CI verification, runbook execution, and safety boundaries. The project is aimed at an emerging OSS problem with clear ecosystem value: helping teams make agent-assisted engineering repeatable, reviewable, and auditable while keeping human approval in the loop.
+
 ## What Is AAA?
 
 AAA is a multi-repo open-source system for teams that want to use AI in real software delivery without losing structure or accountability.
