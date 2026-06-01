@@ -208,6 +208,10 @@ See [ROADMAP.md](ROADMAP.md) for the detailed roadmap.
 
 AAA is most persuasive when shown on a real agent-assisted workflow. See [docs/case-studies/agent-orchestrated-engineering-project.md](docs/case-studies/agent-orchestrated-engineering-project.md).
 
+## External Trial Evidence
+
+For a minimal public-preview trial record, see [docs/case-studies/external-trial-public-preview.md](docs/case-studies/external-trial-public-preview.md).
+
 ## Related Repositories
 
 - `aaa-docs`: public documentation and governance references
