@@ -8,51 +8,23 @@ AAA is an open-source governance toolkit for turning AI-assisted work into reusa
 
 `aaa-tools` is the main executable repository of AAA, maintained as public open-source infrastructure for AI-assisted software governance. It provides real maintainer workflows, not just ideas: bootstrap automation, schema validation, repo checks, CI verification, runbook execution, and safety boundaries. The project is aimed at an emerging OSS problem with clear ecosystem value: helping teams make agent-assisted engineering repeatable, reviewable, and auditable while keeping human approval in the loop.
 
-## What Is AAA?
+## What AAA Is
 
 AAA is a multi-repo open-source system for teams that want to use AI in real software delivery without losing structure or accountability.
 
-The project exists to solve a specific problem:
+The problem it addresses is simple:
 
 > Agent productivity increases faster than governance capacity.
 
 Without stable structure, AI-assisted work tends to drift into undocumented decisions, inconsistent quality, and review-heavy maintenance. AAA addresses that with executable governance.
 
-In practice, AAA packages AI-native engineering controls into reusable assets:
-
-- CLI workflows for deterministic operations
-- Schemas and contracts for machine-checkable structure
-- Runbooks and playbooks for repeatable execution
-- Eval-oriented checks for quality and regression control
-- Templates and scaffolding for consistent project setup
-- Evidence and approval boundaries for human accountability
-
-## Why `aaa-tools` Matters
-
 AAA spans multiple repositories, but `aaa-tools` is the main executable entry point. It is the repo that turns AAA from a documentation concept into runnable maintainer automation.
 
-If a reviewer needs to understand AAA quickly, this repo should answer:
-
-- what AAA is
-- what AAA can do today
-- how the system becomes executable
-- what capabilities are already public and testable
-
-## What Problem AAA Solves
-
-Agent-assisted development increases output speed faster than most teams can increase governance capacity. AAA addresses that gap with deterministic CLI workflows, schemas, runbooks, eval-oriented checks, and explicit human approval boundaries.
-
-AAA is designed for teams that need more than prompts:
-
-- Stable bootstrap workflows for new repos and multi-repo workspaces
-- Schema-backed plans and machine-checkable governance checks
-- Runbook execution with safety boundaries
-- Evidence-oriented maintainer automation instead of free-form agent drift
-
-## What AAA Can Do Today
+## What You Can Verify in This Repo
 
 The current public runtime in `aaa-tools` already supports:
 
+- Install the CLI from a pinned public release
 - Deterministic project bootstrap through `aaa init`
 - Schema-backed init plan validation
 - Multi-repo setup and template application
@@ -60,7 +32,7 @@ The current public runtime in `aaa-tools` already supports:
 - Governance repo checks and machine-readable reports
 - Runbook execution with explicit runtime and file-system boundaries
 - JSON and JSONL output for automation
-- Skill, template, prompt, and eval distribution support across AAA repos
+- Skill, template, prompt, and eval distribution across AAA repos
 - Safety boundaries such as `PATH_TRAVERSAL` protection and readiness/truth gating
 
 ## How AAA Is Structured
@@ -80,33 +52,57 @@ This repo is where those governance ideas become executable.
 
 ## 5-Minute Quickstart
 
+Choose one of the two paths below.
+
+### Track A: Inspect the CLI without cloning the repository
+
+Use this path if you want to verify the installed command surface first.
+
 ```bash
 gh auth setup-git
 python3 -m pip install "git+https://github.com/ai-asset-architecture/aaa-tools.git@v2.0.0"
+
 aaa --version
+aaa --help
+aaa init --help
+aaa run runbook --help
+aaa governance readiness-inspect --help
 ```
 
-Validate an init plan:
+This track is read-only. It lets you inspect the CLI families before applying any repository changes.
+
+### Track B: Run a real bounded repository example
+
+Use this path if you want to execute included examples with concrete repository paths and machine-readable output.
 
 ```bash
-aaa init validate-plan --plan path/to/plan.json --schema specs/plan.schema.json --jsonl
+git clone https://github.com/ai-asset-architecture/aaa-tools.git
+cd aaa-tools
+git checkout v2.0.0
+
+python3 -m pip install -e .
+
+aaa init validate-plan \
+  --plan specs/examples/init-plan.example.json \
+  --schema specs/plan.schema.json \
+  --jsonl
 ```
 
-Apply the bootstrap flow:
+Run a bounded read-only runbook example:
 
 ```bash
-aaa init ensure-repos --org <github-org> --from-plan path/to/plan.json --jsonl
-aaa init apply-templates --org <github-org> --from-plan path/to/plan.json --aaa-tag v2.0.0 --jsonl
-aaa init protect --org <github-org> --from-plan path/to/plan.json --jsonl
-aaa init verify-ci --org <github-org> --from-plan path/to/plan.json --jsonl
-aaa init repo-checks --org <github-org> --from-plan path/to/plan.json --suite governance --jsonl
+aaa run runbook \
+  --runbook-file runbooks/examples/read-only-inspection.json \
+  --json
 ```
 
-Run a runbook with bounded machine-readable output:
+Expected result:
 
-```bash
-aaa run runbook operate-maintain-workflow-v2 --runbook-file runbooks/example.json --json
-```
+- the plan validation command completes with JSONL output
+- the runbook example completes with structured JSON output
+- no repository mutation, branch protection update, or release action is performed
+
+Want proof this has been tried from an external-review perspective? See [External Trial Evidence: AAA Public Preview](docs/case-studies/external-trial-public-preview.md).
 
 ## Architecture Overview
 
