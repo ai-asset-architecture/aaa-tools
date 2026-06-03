@@ -50,6 +50,8 @@ AAA is organized as a set of focused public repositories:
 
 This repo is where those governance ideas become executable.
 
+For a machine-checkable summary of AAA's public repository roles, see [docs/repo-map.json](docs/repo-map.json).
+
 ## 5-Minute Quickstart
 
 Choose one of the two paths below.
@@ -163,6 +165,8 @@ The current public runtime already includes:
 - `specs/`: CLI contracts and supporting design references
 - `scripts/`: release and maintenance scripts
 
+Machine-checkable version: [docs/repo-map.json](docs/repo-map.json)
+
 ## Maintainer Model
 
 AAA is maintained as a multi-repo governance toolkit. `aaa-tools` is the executable core, while adjacent repos provide templates, prompts, evals, docs, actions, and observability surfaces.
@@ -188,6 +192,8 @@ Release validation:
 ./scripts/release-verify.sh v2.0.0
 ```
 
+Release closure note: [docs/release-closures/v2.0.0.md](docs/release-closures/v2.0.0.md)
+
 ## Public Roadmap
 
 Near-term public priorities:
@@ -207,6 +213,8 @@ AAA is most persuasive when shown on a real agent-assisted workflow. See [docs/c
 ## External Trial Evidence
 
 For a minimal public-preview trial record, see [docs/case-studies/external-trial-public-preview.md](docs/case-studies/external-trial-public-preview.md).
+
+For the maintainer-defined public-preview feedback loop, see [docs/public-preview-feedback-loop.md](docs/public-preview-feedback-loop.md).
 
 ## Related Repositories
 
