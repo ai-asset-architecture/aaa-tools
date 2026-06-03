@@ -4,6 +4,7 @@ from pathlib import Path
 
 from aaa import runbook_runtime
 from aaa.action_registry import RuntimeSecurityError
+from aaa.runbook_runtime import RunbookExecutionError
 
 
 class TestRunbookActionsFs(unittest.TestCase):
@@ -92,9 +93,11 @@ class TestRunbookActionsFs(unittest.TestCase):
         cwd = Path.cwd()
         os.chdir(repo_root)
         try:
-            with self.assertRaises(RuntimeSecurityError) as ctx:
+            with self.assertRaises(RunbookExecutionError) as ctx:
                 runbook_runtime.execute_runbook(runbook, inputs={})
-            self.assertEqual(ctx.exception.code, "PATH_TRAVERSAL")
+            self.assertEqual(ctx.exception.details["error_type"], "RuntimeSecurityError")
+            self.assertEqual(ctx.exception.details["action"], "fs_write")
+            self.assertEqual(ctx.exception.details["step"], "escape")
         finally:
             os.chdir(cwd)
 

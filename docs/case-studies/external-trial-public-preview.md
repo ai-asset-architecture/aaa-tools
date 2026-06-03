@@ -40,6 +40,17 @@ The current public-preview preparation work includes:
 - visible maintainer backlog items in GitHub issues
 - active public-readiness cleanup PRs in adjacent AAA repositories
 
+## External README Review Feedback - 2026-06-03
+
+An unsolicited external GitHub user reviewed the public `aaa-tools` README and identified a first-time reviewer friction point in the 5-minute quickstart.
+
+The main issue was that the original quickstart moved from CLI installation directly into a maintainer-oriented bootstrap command using placeholder paths. The feedback recommended:
+
+1. a read-only CLI inspection path, and
+2. a repository-clone path using concrete included examples and machine-readable output.
+
+That feedback is being addressed through a narrow README quickstart patch and concrete example files inside this repository.
+
 ## Next Evidence to Add
 
 The next stronger form of public evidence should include:
@@ -51,4 +62,4 @@ The next stronger form of public evidence should include:
 
 ## Boundary
 
-This is a public-preview evidence note, not a claim of broad production adoption. It exists to document the transition from maintainer-only context toward external OSS usability.
+This is a public-preview evidence note, not a claim of broad production adoption, and not evidence of official program review. It exists to document the transition from maintainer-only context toward external OSS usability.

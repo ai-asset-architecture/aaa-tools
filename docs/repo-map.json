@@ -1,0 +1,85 @@
+{
+  "entry_repo": "aaa-tools",
+  "public_status": "Public Preview",
+  "generated_by": "maintainer-curated",
+  "repositories": [
+    {
+      "name": "aaa-tools",
+      "role": "Executable core CLI runtime and governance automation",
+      "local_path": ".",
+      "public_priority": "Tier A"
+    },
+    {
+      "name": "aaa-actions",
+      "role": "Workflow automation building blocks",
+      "local_path": "",
+      "public_priority": "Tier B"
+    },
+    {
+      "name": "aaa-evals",
+      "role": "Evaluation and regression assets",
+      "local_path": "",
+      "public_priority": "Tier B"
+    },
+    {
+      "name": "aaa-prompts",
+      "role": "Prompt assets separated from executable logic",
+      "local_path": "",
+      "public_priority": "Tier B"
+    },
+    {
+      "name": "aaa-observability",
+      "role": "Reporting and visibility surfaces",
+      "local_path": "",
+      "public_priority": "Tier B"
+    },
+    {
+      "name": "aaa-tpl-docs",
+      "role": "Documentation and playbook templates",
+      "local_path": "",
+      "public_priority": "Tier B"
+    },
+    {
+      "name": "aaa-tpl-service",
+      "role": "Backend and service starter template",
+      "local_path": "",
+      "public_priority": "Tier C"
+    },
+    {
+      "name": "aaa-tpl-frontend",
+      "role": "Frontend starter template",
+      "local_path": "",
+      "public_priority": "Tier C"
+    }
+  ],
+  "repo_contents": [
+    {
+      "path": "aaa",
+      "role": "CLI runtime, governance commands, package and readiness gates, runbook runtime"
+    },
+    {
+      "path": "tests",
+      "role": "Regression coverage for CLI commands and governance boundaries"
+    },
+    {
+      "path": "runbooks",
+      "role": "Executable runbook inputs and examples"
+    },
+    {
+      "path": "templates",
+      "role": "Reusable bootstrap and template assets"
+    },
+    {
+      "path": "skills",
+      "role": "Source-of-truth skill assets distributed to agents"
+    },
+    {
+      "path": "specs",
+      "role": "CLI contracts and supporting design references"
+    },
+    {
+      "path": "scripts",
+      "role": "Release and maintenance scripts"
+    }
+  ]
+}

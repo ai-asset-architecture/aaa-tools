@@ -1,0 +1,46 @@
+{
+  "plan_version": "2.0",
+  "aaa": {
+    "org": "ai-asset-architecture",
+    "version_tag": "v2.0.0",
+    "templates": {
+      "docs": "aaa-tpl-docs",
+      "service": "aaa-tpl-service",
+      "frontend": "aaa-tpl-frontend"
+    },
+    "actions_repo": "aaa-actions"
+  },
+  "target": {
+    "org": "example-org",
+    "project_slug": "example-project",
+    "visibility": "public",
+    "default_branch": "main",
+    "mode": "pr",
+    "github_governance_topology": "repo_local"
+  },
+  "repos": [
+    {
+      "name": "example-project-docs",
+      "type": "docs",
+      "repo_type": "docs",
+      "template": "aaa-tpl-docs",
+      "description": "Example docs repo for quickstart validation.",
+      "owners": ["@aaa/architect"],
+      "required_checks": ["lint", "test", "eval"]
+    }
+  ],
+  "steps": [
+    {
+      "id": "preflight",
+      "type": "check",
+      "description": "Minimal quickstart validation step.",
+      "commands": [
+        "aaa --version"
+      ]
+    }
+  ],
+  "reporting": {
+    "output_schema_path": "runbooks/init/output.schema.json",
+    "required_fields": ["metadata", "summary"]
+  }
+}
